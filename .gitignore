@@ -1,11 +1,31 @@
-# Local secrets and private companion data
+# Local secrets — never commit
 .env
-data/
-*.sqlite3
-*.db
 
-# Generated media
-media/
+# Data (raw + processed + tokenized). The small committed sample under
+# data/raw/sample/ is kept in git; everything large/generated stays out.
+data/raw/gutenberg/
+data/processed/*
+data/tokenized/*
+data/stats/
+!data/processed/.gitkeep
+!data/tokenized/.gitkeep
+
+# Checkpoints and logs
+checkpoints/*
+!checkpoints/.gitkeep
+logs/
+
+# Trained tokenizer artifacts (retrain on a bigger corpus => they change).
+# The tokenizer CODE is committed; the trained JSON/vocab/report are not.
+tokenizer/ankit_tokenizer.json
+tokenizer/vocab.json
+tokenizer/tokenizer_report.json
+tokenizer/_test_*
+
+# File-system noise
+*.bin
+*.pt
+*.ckpt
 
 # Python
 __pycache__/
@@ -13,8 +33,10 @@ __pycache__/
 .pytest_cache/
 .venv/
 *.egg-info/
+build/
+dist/
 
-# Editors / OS
+# Editor / OS
 .DS_Store
 .vscode/
 .idea/

@@ -1,0 +1,56 @@
+# ═══════════════════════════════════════════════════════════════════════
+# ANKIT 0.1 — tokenizer config
+#
+# This drives tokenizer/train_tokenizer.py. We train OUR OWN Byte-Pair
+# Encoding (BPE) tokenizer on the texts produced by Phase 3. It is NOT a
+# copy of Qwen, Llama, GPT, etc. — it is trained fresh on our corpus with
+# random/statistical merges.
+#
+# Special tokens: BOS, EOS, PAD, UNK. Their IDs are assigned automatically
+# in training order and documented in the printed report.
+# ═══════════════════════════════════════════════════════════════════════
+
+name: ankit-0-1-tokenizer
+version: "0.1"
+
+# -- Algorithm & vocabulary size ----------------------------------------
+# BPE (byte-level, like modern LLMs) with a target vocab size. We start small
+# and grow it as the corpus grows. 16,384 tokens is a good first target that
+# matches configs/ankit_0_1.yaml's model vocab_size.
+algorithm: bpe
+vocab_size: 16384
+
+# -- The corpus used to train -------------------------------------------
+# We read plain text from the processed splits produced by Phase 3, plus any
+# .txt files you drop into data/tokenizer_corpus/. By default we use the
+# TRAIN split only (the tokenizer must never see validation/test text).
+input:
+  type: local
+  # Paths, in order, of plain .txt or .jsonl files to read for tokenizer
+  # training. Glob patterns are supported (a * matches many files).
+  paths:
+    - data/processed/splits/train.jsonl
+    - data/raw/sample/**/*.txt
+  # A .jsonl "text" field is read; .txt is read whole.
+  max_documents: 50000        # cap for a very large corpus (None = unlimited)
+  sample_text: "ANJIT"        # placeholder, set an empty string if unused
+
+# -- Special tokens -------------------------------------------------------
+# BOS marks the start of a sequence, EOS the end, PAD pads variable-length
+# batches, UNK handles out-of-vocabulary. All four are always reserved.
+special_tokens:
+  - "<unk>"
+  - "<s>"           # BOS
+  - "</s>"          # EOS
+  - "<pad>"
+
+# -- Training hyper-parameters --------------------------------------------
+bpe:
+  min_frequency: 2            # merge a token pair only if it appears >= this many times
+  show_progress: true
+
+# -- Output ----------------------------------------------------------------
+output_dir: tokenizer
+tokenizer_file: tokenizer/ankit_tokenizer.json
+vocab_file: tokenizer/vocab.json
+report_file: tokenizer/tokenizer_report.json

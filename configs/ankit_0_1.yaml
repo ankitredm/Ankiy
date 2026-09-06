@@ -1,0 +1,59 @@
+# ═══════════════════════════════════════════════════════════════════════
+# ANKIT 0.1 — main model configuration
+#
+# This describes the TARGET model we aim to train. It is a decoder-only
+# Transformer with random initialisation, built from scratch.
+#
+# Estimate of parameters (with these settings, tie_embedding=false):
+#   embedding  : 16,384 * 256   =  4,194,304
+#   position   : 256 * 256      =     65,536
+#   per block  :  ~787,456      ×  6  ≈  4,724,736
+#   final norm : 512
+#   output head: 16,384 * 256   =  4,194,304
+#   ──────────────────────────────────────────
+#   total      ≈ 13,180,000  (~13M parameters)
+#
+# We can change ANY of these numbers here without touching the model code.
+# ═══════════════════════════════════════════════════════════════════════
+
+name: ankit-0-1
+
+model:
+  vocab_size: 16384
+  d_model: 256
+  n_layers: 6
+  n_heads: 8
+  context_length: 256
+  ffn_dim: 1024              # if set to null, it becomes 4 * d_model
+  activation: gelu           # gelu | silu
+  dropout: 0.1
+  norm_eps: 1e-5
+  init_std: 0.02
+  tie_embedding: false       # false keeps the output head as separate params
+  use_bias: false
+
+training:
+  batch_size: 8
+  grad_accumulation_steps: 1
+  learning_rate: 0.0006
+  weight_decay: 0.1
+  warmup_steps: 100
+  total_steps: 5000
+  checkpoint_interval: 500
+  eval_interval: 100
+  eval_steps: 50
+  max_grad_norm: 1.0
+  seed: 1337
+  precision: bf16            # fp32 | fp16 | bf16
+  device: cuda
+  output_dir: checkpoints
+  tokenizer_path: tokenizer/ankit_tokenizer.json
+  train_data: data/tokenized/train.bin
+  val_data: data/tokenized/val.bin
+  test_data: data/tokenized/test.bin
+
+# Provenance — filled in automatically at training time, but you can pre-fill.
+git_commit: ""
+dataset_version: ""
+tokenizer_version: ""
+notes: "ANKIT 0.1 — decoder-only Transformer trained from scratch."

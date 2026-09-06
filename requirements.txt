@@ -1,0 +1,21 @@
+# ANKIT 0.1 — pinned Python dependencies
+#
+# IMPORTANT: We deliberately do NOT pin torch here with a fixed CUDA tag,
+# because the correct wheel depends on your machine. Install torch separately
+# with the right index URL (see scripts/verify_environment.py).
+#
+# CPU-only box:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+# NVIDIA GPU (CUDA 12.1) — recommended for cloud training:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+
+# Core from-scratch stack (stable, reproducible)
+numpy==1.26.4
+tokenizers==0.20.3
+safetensors==0.4.5
+PyYAML==6.0.2
+tqdm==4.66.5
+datasets==2.21.0
+
+# Dev / test
+pytest==8.3.4
