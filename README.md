@@ -152,6 +152,17 @@ logs/                     # training logs (git-ignored)
 
 ### What's built so far
 
+**Phase 6/7 — smoke test** (`scripts/smoke_test.py`). One command verifies the
+entire chain before any real (costly) training:
+
+```bash
+python scripts/smoke_test.py --config configs/smoke.yaml
+```
+
+It checks, in order: tokenizer round-trip, data pipeline, model forward pass,
+loss, backward+optimizer, checkpoint save/reload, generation, and parameter
+count. Run it on the cloud GPU before launching a larger run.
+
 **Phase 5 — training pipeline** (`training/`, `scripts/tokenize_dataset.py`,
 `generate.py`). The complete from-scratch training loop:
 
