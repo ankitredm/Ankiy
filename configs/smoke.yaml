@@ -1,0 +1,46 @@
+# ═══════════════════════════════════════════════════════════════════════
+# ANKIT 0.1 — SMOKE TEST config
+#
+# This is a TINY model on purpose. Its only job is to prove that every part
+# of the pipeline works (forward pass, loss, backward pass, checkpoint,
+# generation) in a few seconds on a CPU or a cheap GPU.
+#
+# Do NOT train the real ANKIT 0.1 with this config. Use this only as a
+# quick "is everything wired up correctly?" test before a long run.
+# ═══════════════════════════════════════════════════════════════════════
+
+name: ankit-0-1-smoke
+
+model:
+  vocab_size: 512
+  d_model: 64
+  n_layers: 2
+  n_heads: 4
+  context_length: 64
+  ffn_dim: 256
+  activation: gelu
+  dropout: 0.1
+  norm_eps: 1e-5
+  init_std: 0.02
+  tie_embedding: false
+  use_bias: false
+
+training:
+  batch_size: 2
+  grad_accumulation_steps: 1
+  learning_rate: 0.001
+  weight_decay: 0.0
+  warmup_steps: 5
+  total_steps: 20
+  checkpoint_interval: 5
+  eval_interval: 5
+  eval_steps: 5
+  max_grad_norm: 1.0
+  seed: 42
+  precision: fp32            # smoke tests run fine in fp32 on CPU
+  device: cuda               # set to "cpu" if you are testing on a CPU box
+  output_dir: checkpoints
+  tokenizer_path: tokenizer/ankit_tokenizer.json
+  train_data: data/tokenized/smoke_train.bin
+  val_data: data/tokenized/smoke_val.bin
+  test_data: data/tokenized/smoke_test.bin

@@ -1,0 +1,79 @@
+# ═══════════════════════════════════════════════════════════════════════
+# ANKIT 0.1 — dataset preparation config
+#
+# This drives scripts/prepare_dataset.py. It decides:
+#   - where the raw text lives (data/raw/)
+#   - how we clean / normalise / filter it
+#   - how we remove exact and near-duplicate documents
+#   - how we split into train / validation / test
+#   - where the processed output + statistics go
+#
+# Every number here is configurable. Nothing is hard-coded in the pipeline.
+# The whole run is reproducible: same config + same raw data + same seed
+# => identical output.
+# ═══════════════════════════════════════════════════════════════════════
+
+name: ankit-0-1-data
+version: "0.1"
+seed: 1337
+
+# -- Where the raw corpus lives -----------------------------------------
+# "local" means "read files already sitting in data/raw/". This is what you
+# use after downloading legal text (e.g. Project Gutenberg) into data/raw/,
+# or with the committed sample under data/raw/sample/.
+source:
+  type: local
+  raw_dir: data/raw
+  # File extensions we treat as raw text. .jsonl files are read line-by-line
+  # and use a "text" (or "content") field per line.
+  extensions:
+    - .txt
+    - .jsonl
+
+# -- Cleaning / normalisation -------------------------------------------
+cleaning:
+  unicode_normalize: NFC       # NFC | NFKC | NFD | NFKD
+  remove_control_chars: true
+  normalize_newlines: true     # \r\n and \r  ->  \n
+  strip_bom: true
+  collapse_whitespace: true    # runs of spaces/tabs -> single space
+  collapse_blank_lines: true   # 2+ blank lines -> one paragraph break
+  remove_urls: true
+  remove_html: true
+  remove_bullet_markers: true  # "-", "*", "•" line prefixes used in lists
+
+# -- Document filtering --------------------------------------------------
+# A document is dropped if it fails ANY of these. "None" / 0 disables.
+filtering:
+  min_chars: 200               # too short = probably a fragment
+  max_chars: 100000            # too long = likely a concatenated dump
+  min_words: 40
+  max_words: 20000
+  min_avg_word_len: 3.0        # gibberish like "aaaa" tends to be short
+  max_avg_word_len: 14.0       # very long "words" often signal bad data
+  max_repeat_line_ratio: 0.40  # fraction of near-duplicate lines in a doc
+
+# -- Deduplication -------------------------------------------------------
+# exact_dedup drops byte-identical documents (fast, always on).
+# near_dedup drops near-duplicates using MinHash + LSH (Jaccard similarity).
+dedup:
+  exact: true
+  near: false                  # turn on for large corpora (more compute)
+  minhash_perms: 128           # number of permutation hashes (power of 2)
+  lsh_bands: 16                # bands * rows must equal minhash_perms (16*8)
+  lsh_rows: 8
+  near_threshold: 0.8          # Jaccard >= this => treat as duplicate
+
+# -- Train / validation / test split --------------------------------------
+split:
+  train_ratio: 0.90
+  val_ratio: 0.05
+  test_ratio: 0.05
+  shuffle: true                # deterministic (seeded)
+
+# -- Output --------------------------------------------------------------
+output:
+  processed_dir: data/processed
+  splits_dir: data/processed/splits
+  stats_dir: data/stats
+  stats_file: data/stats/stats.json
