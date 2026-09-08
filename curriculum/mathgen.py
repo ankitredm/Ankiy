@@ -760,27 +760,500 @@ def _geometry_3d() -> list[dict]:
 def build() -> list[dict]:
     out: list[dict] = []
     # stage 1
-    out += _counting_exercises()
-    out += _number_recognition()
-    out += _add_sub_within_10()
-    out += _shapes_items()
-    out += _patterns_items()
+    out += _counting_exercises(n_each=60)
+    out += _number_recognition(n_each=70)
+    out += _add_sub_within_10(n_each=100)
+    out += _shapes_items(n_each=30)
+    out += _patterns_items(n=90)
+    out += _add_sub_within_20(n=340)
+    out += _compare_order_drills(n=200)
+    out += _counting_wide()
+    out += _number_words_wide()
+    out += _shapes_real_objects()
     # stage 2
-    out += _place_value_items()
-    out += _add_sub_100()
-    out += _multiplication_intro()
+    out += _place_value_items(n_each=110)
+    out += _add_sub_100(n_each=240)
+    out += _multiplication_intro(n=90)
     out += _money_time_measure_2()
     out += _number_facts()
+    out += _even_odd_rounding(n=190)
+    out += _tables_fluency(n=360)
+    out += _mult_div_word_wide(n=240)
+    out += _place_value_wide(n=170)
     # stage 3
-    out += _add_sub_1000()
-    out += _division_items()
+    out += _add_sub_1000(n=190)
+    out += _division_items(n=130)
     out += _fractions_items()
     out += _measure_calendar_geometry()
     out += _geometry_3d()
-    out += _comparison_items()
+    out += _comparison_items(n=70)
+    out += _time_calendar_drills(n=180)
+    out += _measure_drills(n=160)
+    out += _perimeter_drills(n=110)
     # stage 4
-    out += _big_numbers()
-    out += _mult_div_big()
-    out += _factors_multiples()
-    out += _word_problems(n=28)
+    out += _big_numbers(n=220)
+    out += _mult_div_big(n=380)
+    out += _factors_multiples(n=230)
+    out += _word_problems(n=280)
+    out += _fractions_decimals_drills(n=420)
+    out += _multi_step_drills(n=420)
+    out += _perimeter_drills(n=200)
+    out += _division_remainder(n=240)
+    return out
+
+
+# ===========================================================================
+# Expanded parametric practice — foundation-training scale-up.
+#
+# Same style as above, but with much wider value ranges and more templates so
+# the model learns the OPERATION, not specific strings. Everything is seeded
+# (module rng) so rebuilds are deterministic; build.py still dedupes.
+# ===========================================================================
+
+_NAME_BANK = ["Aarav", "Diya", "Kabir", "Ishaan", "Meera", "Riya", "Vivaan",
+              "Anaya", "Aditya", "Naina", "Arjun", "Tara", "Rohan", "Sneha",
+              "Manav", "Kavya", "Yash", "Pooja", "Nikhil", "Simran"]
+
+
+def _pick_2(bank):
+    a = rng.choice(bank)
+    b = rng.choice(bank)
+    while b == a:
+        b = rng.choice(bank)
+    return a, b
+
+
+def _add_sub_within_20(n: int = 240) -> list[dict]:
+    """Class 1: addition/subtraction with sums within 20, many templates."""
+    out = []
+    for _ in range(n):
+        style = rng.randrange(5)
+        thing = rng.choice(_COUNTABLES)
+        if style == 0:  # add to 20
+            a = rng.randint(2, 12); b = rng.randint(2, min(8, 20 - a))
+            out.append(item(1, "exercise",
+                f"Question: {rng.choice(_NAME_BANK)} has {a} {thing}. {rng.choice(['Her friend gives', 'His friend gives', 'Didi gives', 'Bhaiya gives'])} {b} more {thing}. How many {thing} altogether?\n"
+                f"Answer: {a} + {b} = {a + b}. There are {a + b} {thing} altogether."))
+        elif style == 1:  # subtract from 20
+            a = rng.randint(8, 20); b = rng.randint(1, a - 2)
+            out.append(item(1, "exercise",
+                f"Question: There are {a} {thing} in a basket. {b} {thing} are eaten. How many {thing} are left?\n"
+                f"Answer: {a} - {b} = {a - b}. {a - b} {thing} are left."))
+        elif style == 2:  # missing addend
+            total = rng.randint(6, 18); a = rng.randint(1, total - 1)
+            out.append(item(1, "exercise",
+                f"Question: {a} {thing} and some more {thing} make {total} {thing} in all. How many more {thing} were added?\n"
+                f"Answer: {total} - {a} = {total - a}. So {total - a} more {thing} were added."))
+        elif style == 3:  # doubles / near-doubles
+            a = rng.randint(2, 10)
+            out.append(item(1, "exercise",
+                f"Question: What is double {a}? ({a} + {a})\n"
+                f"Answer: {a} + {a} = {2 * a}. Double {a} is {2 * a}."))
+        else:  # three addends
+            a = rng.randint(1, 6); b = rng.randint(1, 6); c = rng.randint(1, 6)
+            out.append(item(1, "exercise",
+                f"Question: A plate has {a} {thing}, {b} {thing} and {c} {thing}. How many {thing} in all?\n"
+                f"Answer: {a} + {b} = {a + b}, and {a + b} + {c} = {a + b + c}. There are {a + b + c} {thing} in all."))
+    return out
+
+
+def _compare_order_drills(n: int = 120) -> list[dict]:
+    """Class 1-2: bigger/smaller, between, before/after, ascending/descending."""
+    out = []
+    for _ in range(n):
+        style = rng.randrange(4)
+        if style == 0:
+            a, b = rng.randint(2, 99), rng.randint(2, 99)
+            while a == b:
+                b = rng.randint(2, 99)
+            big, small = max(a, b), min(a, b)
+            out.append(item(rng.choice([1, 2]), "exercise",
+                f"Question: Which number is bigger: {a} or {b}?\n"
+                f"Answer: {big} is bigger than {small} ({big} > {small})."))
+        elif style == 1:
+            a = rng.randint(2, 98)
+            out.append(item(rng.choice([1, 2]), "exercise",
+                f"Question: Write the number just after {a} and the number just before {a}.\n"
+                f"Answer: Just after {a} comes {a + 1}, and just before {a} comes {a - 1}."))
+        elif style == 2:
+            nums = rng.sample(range(3, 120), rng.choice([3, 4]))
+            asc = sorted(nums); desc = sorted(nums, reverse=True)
+            which = rng.choice(["smallest to biggest", "biggest to smallest"])
+            ans = asc if which.startswith("smallest") else desc
+            out.append(item(2, "exercise",
+                f"Question: Arrange in order ({which}): {', '.join(str(x) for x in nums)}.\n"
+                f"Answer: {' < '.join(str(x) for x in ans) if which.startswith('smallest') else ' > '.join(str(x) for x in ans)}.")) 
+        else:
+            a = rng.randint(3, 97)
+            out.append(item(2, "exercise",
+                f"Question: What number comes between {a} and {a + 2}?\n"
+                f"Answer: The number between {a} and {a + 2} is {a + 1}."))
+    return out
+
+
+def _even_odd_rounding(n: int = 90) -> list[dict]:
+    out = []
+    for _ in range(n):
+        style = rng.randrange(3)
+        if style == 0:
+            a = rng.randint(2, 500)
+            out.append(item(rng.choice([2, 3]), "exercise",
+                f"Question: Is {a} an even number or an odd number?\n"
+                f"Answer: {a} ends in {a % 10}, so it is an {'even' if a % 2 == 0 else 'odd'} number."))
+        elif style == 1:
+            a = rng.randint(12, 989)
+            r10 = round(a / 10) * 10
+            out.append(item(3, "exercise",
+                f"Question: Round {a} to the nearest ten.\n"
+                f"Answer: {a} rounds to {r10} to the nearest ten."))
+        else:
+            a = rng.randint(150, 9400)
+            r100 = round(a / 100) * 100
+            out.append(item(rng.choice([3, 4]), "exercise",
+                f"Question: Round {a} to the nearest hundred.\n"
+                f"Answer: {a} rounds to {r100} to the nearest hundred."))
+    return out
+
+
+def _tables_fluency(n: int = 240) -> list[dict]:
+    """Class 2-3: multiplication tables and division facts as direct drills."""
+    out = []
+    for _ in range(n):
+        a = rng.randint(2, rng.choice([12, 16, 20])); b = rng.randint(2, 12)
+        if rng.random() < 0.55:
+            out.append(item(rng.choice([2, 3]), "exercise",
+                f"Question: {a} × {b} = ?\n"
+                f"Answer: {a} × {b} = {a * b}."))
+        else:
+            prod = a * b
+            out.append(item(rng.choice([2, 3]), "exercise",
+                f"Question: {prod} ÷ {a} = ?\n"
+                f"Answer: {prod} ÷ {a} = {b} because {a} × {b} = {prod}."))
+    return out
+
+
+def _mult_div_word_wide(n: int = 150) -> list[dict]:
+    """Class 2-3: equal-groups and sharing word problems, wide values."""
+    out = []
+    for _ in range(n):
+        a = rng.randint(3, 12); b = rng.randint(3, 12)
+        thing = rng.choice(_COUNTABLES)
+        name = rng.choice(_NAME_BANK)
+        style = rng.randrange(3)
+        if style == 0:
+            out.append(item(rng.choice([2, 3]), "word_problem",
+                f"Question: There are {a} bags. Each bag has {b} {thing}. How many {thing} in all?\n"
+                f"Answer: {a} bags of {b} means {a} × {b} = {a * b}. There are {a * b} {thing} in all."))
+        elif style == 1:
+            out.append(item(rng.choice([2, 3]), "word_problem",
+                f"Question: {name} shares {a * b} {thing} equally among {a} friends. How many {thing} does each friend get?\n"
+                f"Answer: {a * b} ÷ {a} = {b}. Each friend gets {b} {thing}."))
+        else:
+            out.append(item(3, "word_problem",
+                f"Question: {a * b} {thing} are arranged in equal rows of {b}. How many rows are there?\n"
+                f"Answer: {a * b} ÷ {b} = {a}. There are {a} rows."))
+    return out
+
+
+def _money_drills(n: int = 130) -> list[dict]:
+    out = []
+    items_shop = [("notebook", 20, 60), ("pencil", 5, 25), ("eraser", 3, 15),
+                  ("chocolate", 10, 80), ("biscuit pack", 15, 60), ("ball", 25, 90),
+                  ("toy car", 30, 95), ("storybook", 40, 150), ("lunch box", 50, 200),
+                  ("water bottle", 35, 120), ("crayons box", 25, 90), ("scale", 10, 40)]
+    for _ in range(n):
+        style = rng.randrange(3)
+        name1, lo, hi = rng.choice(items_shop)
+        price = rng.randrange(lo, hi + 1, 5)
+        if style == 0:  # total of two buys
+            name2, lo2, hi2 = rng.choice(items_shop)
+            while name2 == name1:
+                name2, lo2, hi2 = rng.choice(items_shop)
+            price2 = rng.randrange(lo2, hi2 + 1, 5)
+            out.append(item(rng.choice([2, 3]), "word_problem",
+                f"Question: {name1} costs Rs {price} and {name2} costs Rs {price2}. How much money for both?\n"
+                f"Answer: Rs {price} + Rs {price2} = Rs {price + price2}. Both cost Rs {price + price2}."))
+        elif style == 1:  # change
+            paid = price + rng.choice([5, 10, 20, 50])
+            out.append(item(rng.choice([2, 3]), "word_problem",
+                f"Question: {name1} costs Rs {price}. You pay Rs {paid}. How much change do you get back?\n"
+                f"Answer: Rs {paid} - Rs {price} = Rs {paid - price}. You get Rs {paid - price} back."))
+        else:  # how many can be bought
+            if price <= 5:
+                continue
+            k = rng.randint(2, 6)
+            budget = price * k + rng.choice([0, 0, price // 2])
+            out.append(item(3, "word_problem",
+                f"Question: One {name1} costs Rs {price}. How many can you buy with Rs {budget}? How much money is left?\n"
+                f"Answer: Rs {budget} ÷ Rs {price} = {budget // price}, so you can buy {budget // price}. "
+                f"Money left = Rs {budget} - Rs {price * (budget // price)} = Rs {budget % price}."))
+    return out
+
+
+_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+
+def _time_calendar_drills(n: int = 120) -> list[dict]:
+    out = []
+    for _ in range(n):
+        style = rng.randrange(4)
+        if style == 0:  # clock reading
+            h = rng.randint(1, 12); m = rng.choice([0, 15, 30, 45])
+            reading = f"{h} o'clock" if m == 0 else f"{h}:{m:02d}"
+            out.append(item(rng.choice([2, 3]), "exercise",
+                f"Question: The hour hand is just after {h if h != 12 else 12} and the minute hand points at "
+                f"{ {0: 12, 15: 3, 30: 6, 45: 9}[m] }. What time does the clock show?\n"
+                f"Answer: The clock shows {reading} ({h}:{m:02d})."))
+        elif style == 1:  # duration
+            h1 = rng.randint(7, 10); dur = rng.choice([1, 2, 3]); h2 = h1 + dur
+            out.append(item(rng.choice([2, 3]), "word_problem",
+                f"Question: School starts at {h1} o'clock and ends at {h2} o'clock. How many hours is the school day?\n"
+                f"Answer: From {h1} to {h2} is {h2 - h1} hours. The school day is {dur} hours long."))
+        elif style == 2:  # days
+            i = rng.randrange(7)
+            k = rng.choice([1, 2, 3])
+            out.append(item(rng.choice([2, 3]), "exercise",
+                f"Question: If today is {_DAYS[i]}, what day will it be after {k} day{'s' if k > 1 else ''}?\n"
+                f"Answer: {_DAYS[i]} + {k} day{'s' if k > 1 else ''} = {_DAYS[(i + k) % 7]}. It will be {_DAYS[(i + k) % 7]}."))
+        else:  # weeks/days conversion
+            w = rng.randint(2, 9)
+            out.append(item(3, "exercise",
+                f"Question: How many days are there in {w} weeks?\n"
+                f"Answer: 1 week has 7 days, so {w} weeks have {w} × 7 = {w * 7} days."))
+    return out
+
+
+def _measure_drills(n: int = 110) -> list[dict]:
+    out = []
+    for _ in range(n):
+        style = rng.randrange(4)
+        if style == 0:  # cm to m
+            cm = rng.randint(2, 9) * 100 + rng.choice([0, 50])
+            out.append(item(rng.choice([2, 3]), "exercise",
+                f"Question: A rope is {cm} cm long. How many metres and centimetres is that?\n"
+                f"Answer: 100 cm = 1 m, so {cm} cm = {cm // 100} m {cm % 100} cm."))
+        elif style == 1:  # g to kg
+            g = rng.randint(1, 9) * 500
+            out.append(item(rng.choice([2, 3]), "exercise",
+                f"Question: A watermelon weighs {g} g. How many kilograms is that?\n"
+                f"Answer: 1000 g = 1 kg, so {g} g = {g // 1000} kg."))
+        elif style == 2:  # L addition
+            a = rng.randint(1, 9); b = rng.randint(1, 9)
+            out.append(item(rng.choice([2, 3]), "word_problem",
+                f"Question: A drum has {a} L of water and {b} L more is poured in. How much water is in the drum now?\n"
+                f"Answer: {a} L + {b} L = {a + b} L. The drum has {a + b} L of water now."))
+        else:  # length compare
+            a = rng.randint(20, 200); b = a + rng.randint(10, 150)
+            out.append(item(rng.choice([2, 3]), "exercise",
+                f"Question: A pencil is {a} cm and a scale is {b} cm. How much longer is the scale?\n"
+                f"Answer: {b} cm - {a} cm = {b - a} cm. The scale is {b - a} cm longer."))
+    return out
+
+
+def _fractions_decimals_drills(n: int = 150) -> list[dict]:
+    out = []
+    for _ in range(n):
+        style = rng.randrange(4)
+        if style == 0:  # fraction of a set
+            den = rng.choice([2, 3, 4, 5]); num = rng.randint(1, den - 1)
+            total = den * rng.randint(2, 8)
+            out.append(item(rng.choice([3, 4]), "exercise",
+                f"Question: What is {num}/{den} of {total}?\n"
+                f"Answer: {total} ÷ {den} = {total // den}, and {num} × {total // den} = {num * total // den}. "
+                f"So {num}/{den} of {total} is {num * total // den}."))
+        elif style == 1:  # equivalent fractions
+            a = rng.randint(1, 4); b = a + rng.randint(1, 4); k = rng.randint(2, 5)
+            out.append(item(4, "exercise",
+                f"Question: Write a fraction equivalent to {a}/{b}.\n"
+                f"Answer: Multiply numerator and denominator by {k}: {a}/{b} = {a * k}/{b * k}."))
+        elif style == 2:  # decimal compare (tenths)
+            x = rng.randint(11, 99) / 10; y = rng.randint(11, 99) / 10
+            while x == y:
+                y = rng.randint(11, 99) / 10
+            big = max(x, y); small = min(x, y)
+            out.append(item(4, "exercise",
+                f"Question: Which is greater: {x:.1f} or {y:.1f}?\n"
+                f"Answer: {big:.1f} is greater than {small:.1f} ({big:.1f} > {small:.1f})."))
+        else:  # fraction of a whole shape wording
+            den = rng.choice([2, 3, 4]); part = {"2": "two halves", "3": "three thirds", "4": "four quarters"}[str(den)]
+            out.append(item(rng.choice([3, 4]), "exercise",
+                f"Question: A roti is cut into {den} equal pieces. What fraction is one piece?\n"
+                f"Answer: One piece out of {den} equal pieces is 1/{den}. {part.capitalize()} make the whole roti."))
+    return out
+
+
+def _perimeter_drills(n: int = 80) -> list[dict]:
+    out = []
+    for _ in range(n):
+        a = rng.randint(3, 25); b = rng.randint(3, 25)
+        if rng.random() < 0.5:
+            out.append(item(rng.choice([3, 4]), "exercise",
+                f"Question: A rectangle is {a} cm long and {b} cm wide. Find its perimeter.\n"
+                f"Answer: Perimeter = 2 × (length + breadth) = 2 × ({a} + {b}) = 2 × {a + b} = {2 * (a + b)} cm."))
+        else:
+            s = rng.randint(3, 20)
+            out.append(item(rng.choice([3, 4]), "exercise",
+                f"Question: A square park has each side {s} m. Find its perimeter.\n"
+                f"Answer: Perimeter of a square = 4 × side = 4 × {s} = {4 * s} m."))
+    return out
+
+
+def _multi_step_drills(n: int = 130) -> list[dict]:
+    """Class 3-4: two-step and three-step problems mixing operations."""
+    out = []
+    for _ in range(n):
+        style = rng.randrange(4)
+        name = rng.choice(_NAME_BANK)
+        thing = rng.choice(_COUNTABLES)
+        if style == 0:  # a + b - c
+            a = rng.randint(12, 60); b = rng.randint(5, 30); c = rng.randint(4, min(20, a + b - 1))
+            out.append(item(rng.choice([3, 4]), "word_problem",
+                f"Question: {name} had {a} {thing} and bought {b} more. Then {name} gave away {c} {thing}. How many {thing} are left?\n"
+                f"Answer: First {a} + {b} = {a + b}. Then {a + b} - {c} = {a + b - c}. {name} has {a + b - c} {thing} left."))
+        elif style == 1:  # a - b + c
+            a = rng.randint(30, 90); b = rng.randint(5, a - 2); c = rng.randint(3, 25)
+            out.append(item(rng.choice([3, 4]), "word_problem",
+                f"Question: A shop had {a} {thing}. {b} {thing} were sold, then {c} more arrived. How many {thing} does the shop have now?\n"
+                f"Answer: {a} - {b} = {a - b}, then {a - b} + {c} = {a - b + c}. The shop has {a - b + c} {thing} now."))
+        elif style == 2:  # sum then divide
+            a = rng.randint(10, 40); b = rng.randint(10, 40); k = rng.choice([2, 3, 4, 5])
+            total = a + b
+            while total % k != 0:
+                b += 1; total = a + b
+            out.append(item(4, "word_problem",
+                f"Question: {name} collected {a} {thing} on day one and {b} {thing} on day two. They were packed equally into {k} boxes. How many {thing} in each box?\n"
+                f"Answer: Total = {a} + {b} = {total}. {total} ÷ {k} = {total // k}. Each box has {total // k} {thing}."))
+        else:  # multiply then subtract
+            a = rng.randint(4, 12); b = rng.randint(4, 12); c = rng.randint(3, 30)
+            out.append(item(4, "word_problem",
+                f"Question: There are {a} shelves with {b} books each. {c} books are taken out for a book fair. How many books remain on the shelves?\n"
+                f"Answer: Books on shelves = {a} × {b} = {a * b}. After taking out: {a * b} - {c} = {a * b - c}. {a * b - c} books remain."))
+    return out
+
+
+def _place_value_wide(n: int = 110) -> list[dict]:
+    out = []
+    for _ in range(n):
+        style = rng.randrange(3)
+        if style == 0:
+            num = rng.randint(10, 99)
+            out.append(item(2, "exercise",
+                f"Question: In the number {num}, what is the place value of {str(num)[0]}?\n"
+                f"Answer: In {num}, the digit {str(num)[0]} is in the tens place, so its place value is {int(str(num)[0]) * 10}."))
+        elif style == 1:
+            num = rng.randint(100, 999)
+            d = str(num)
+            out.append(item(3, "exercise",
+                f"Question: Write {num} in expanded form.\n"
+                f"Answer: {num} = {int(d[0]) * 100} + {int(d[1]) * 10} + {int(d[2])}."))
+        else:
+            num = rng.randint(1000, 9999)
+            d = str(num)
+            out.append(item(4, "exercise",
+                f"Question: In the number {num}, which digit is in the hundreds place?\n"
+                f"Answer: In {num} the digit {d[1]} is in the hundreds place ({int(d[1]) * 100})."))
+    return out
+
+
+def _division_remainder(n: int = 140) -> list[dict]:
+    """Class 4: division with remainders, direct and word problems."""
+    out = []
+    for _ in range(n):
+        d = rng.randrange(2, 13)
+        q = rng.randint(1, 12)
+        rem = rng.randint(1, d - 1)
+        total = d * q + rem
+        style = rng.randrange(2)
+        if style == 0:
+            out.append(item(4, "exercise",
+                f"Question: {total} ÷ {d} = ? (quotient and remainder)\n"
+                f"Answer: {d} × {q} = {d * q}, and {total} - {d * q} = {rem}. So {total} ÷ {d} = {q} remainder {rem}."))
+        else:
+            thing = rng.choice(_COUNTABLES)
+            out.append(item(4, "word_problem",
+                f"Question: {total} {thing} are shared equally among {d} children. How many does each child get and how many are left over?\n"
+                f"Answer: {total} ÷ {d} = {q} remainder {rem}. Each child gets {q} {thing}, and {rem} are left over."))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Extra volume for the foundation run: wider counting, number words,
+# shapes-with-objects, and more mixed stage-1 practice.
+# ---------------------------------------------------------------------------
+_EXTRA_THINGS = ["buttons", "beads", "leaves", "shells", "feathers", "sticks",
+                 "stones", "pebbles", "coins", "cards", "bangles", "ribbons"]
+
+
+def _counting_wide(n: int = 160) -> list[dict]:
+    out = []
+    for _ in range(n):
+        style = rng.randrange(4)
+        thing = rng.choice(_COUNTABLES + _EXTRA_THINGS)
+        if style == 0:
+            a = rng.randint(21, 99)
+            out.append(item(1, "exercise",
+                f"Question: Count the {thing}. There are {a} {thing} on the table. How many {thing} are there?\n"
+                f"Answer: Counting by ones from 21 to {a} gives {a} {thing}. There are {a} {thing}."))
+        elif style == 1:
+            a = rng.randint(2, 9)
+            out.append(item(1, "exercise",
+                f"Question: Count in tens: 10, 20, 30, ... What comes after {a * 10}?\n"
+                f"Answer: After {a * 10} comes {(a + 1) * 10}. We are skip counting in tens: {a * 10}, {(a + 1) * 10}, {(a + 2) * 10}, ..."))
+        elif style == 2:
+            a = rng.randint(3, 18)
+            out.append(item(1, "exercise",
+                f"Question: There are {a} {thing} in a row. If {rng.choice(['2', '3', '1'])} more {thing} are put in the row, how many will there be?\n"
+                f"Answer: {a} + 1 = {a + 1}, {a} + 2 = {a + 2}, {a} + 3 = {a + 3}. So the new count can be {a + 1}, {a + 2} or {a + 3}."))
+        else:
+            a = rng.randint(10, 99)
+            out.append(item(1, "exercise",
+                f"Question: Write the number that comes just after {a} and just before {a}.\n"
+                f"Answer: Just before {a} is {a - 1}, and just after {a} is {a + 1}."))
+    return out
+
+
+def _number_words_wide(n: int = 130) -> list[dict]:
+    tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
+    ones = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+            "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+            "seventeen", "eighteen", "nineteen"]
+
+    def num_word(x: int) -> str:
+        if x < 20:
+            return ones[x]
+        t, o = divmod(x, 10)
+        return tens[t] + ("-" + ones[o] if o else "")
+    out = []
+    for _ in range(n):
+        x = rng.randint(21, 99)
+        if rng.random() < 0.5:
+            out.append(item(1, "exercise",
+                f"Question: What number is written as '{num_word(x)}'?\n"
+                f"Answer: '{num_word(x)}' is written as {x}."))
+        else:
+            out.append(item(1, "exercise",
+                f"Question: Write {x} in words.\n"
+                f"Answer: {x} is written as '{num_word(x)}'. {x} has {int(str(x)[0])} tens and {int(str(x)[1])} ones."))
+    return out
+
+
+def _shapes_real_objects(n: int = 70) -> list[dict]:
+    pairs = [
+        ("coin", "circle"), ("egg", "oval"), ("door", "rectangle"), ("chess board square", "square"),
+        ("slice of pizza", "triangle"), ("ball", "sphere"), ("box", "cube"), ("drum", "cylinder"),
+        ("birthday cap", "cone"), ("biscuit", "circle"), ("window", "rectangle"),
+        ("star in the sky", "star"), ("brick", "cuboid"), ("ice cream cone", "cone"),
+        ("ruler", "rectangle"), ("clock face", "circle"), ("tent", "triangle"),
+    ]
+    out = []
+    for _ in range(n):
+        obj, shape = rng.choice(pairs)
+        if rng.random() < 0.5:
+            out.append(item(1, "exercise",
+                f"Question: What shape does a {obj} look like?\n"
+                f"Answer: A {obj} looks like a {shape}."))
+        else:
+            out.append(item(1, "exercise",
+                f"Question: Name one thing around us that has a {shape} shape.\n"
+                f"Answer: A {obj} has a {shape} shape."))
     return out

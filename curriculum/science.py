@@ -316,4 +316,250 @@ def build() -> list[dict]:
     ]
     for stage, text in facts:
         out.append(item(stage, "qa", text))
+
+    # -- Expanded parametric practice (foundation-training scale-up) ---------
+    out += _animal_facts(n=340)
+    out += _body_facts(n=160)
+    out += _plant_facts(n=150)
+    out += _water_space_facts(n=180)
+    out += _health_safety_facts(n=170)
+    out += _habitat_environment_facts(n=140)
+    out += _cause_effect_science(n=130)
+    return out
+
+
+# ===========================================================================
+# Expanded parametric practice — foundation-training scale-up.
+# Fact tables x question variants, so the model learns CONCEPTS with several
+# phrasings instead of memorising one string.
+# ===========================================================================
+import random as _random
+
+_rng = _random.Random(20240504)
+
+
+def _qa(stage: int, q: str, a: str) -> dict:
+    return item(stage, "qa", f"Question: {q}\nAnswer: {a}")
+
+
+def _variants(qs: list[str]):
+    """Pick a random question phrasing for a fact."""
+    return _rng.choice(qs)
+
+
+def _animal_facts(n: int = 240) -> list[dict]:
+    table = [
+        # (animal, stage, young, home, sound, food, special)
+        ("cow", 1, "calf", "shed", "moos", "grass", "gives us milk"),
+        ("dog", 1, "puppy", "kennel", "barks", "food we give it", "guards our home"),
+        ("cat", 1, "kitten", "house", "meows", "milk and fish", "catches mice"),
+        ("hen", 1, "chick", "coop", "clucks", "grains", "gives us eggs"),
+        ("goat", 2, "kid", "shed", "bleats", "grass and leaves", "gives us milk"),
+        ("horse", 2, "foal", "stable", "neighs", "grass and hay", "runs very fast"),
+        ("sheep", 2, "lamb", "fold", "bleats", "grass", "gives us wool"),
+        ("duck", 2, "duckling", "pond", "quacks", "small water plants", "swims in water"),
+        ("lion", 2, "cub", "den", "roars", "meat of other animals", "is called the king of the jungle"),
+        ("frog", 2, "tadpole", "pond", "croaks", "insects", "can live in water and on land"),
+        ("rabbit", 2, "bunny", "burrow", "no loud sound", "carrots and green plants", "digs burrows"),
+        ("elephant", 3, "calf", "jungle", "trumpets", "leaves, grass and bananas", "is the biggest land animal"),
+        ("tiger", 3, "cub", "jungle", "roars", "meat", "is our national animal"),
+        ("bee", 3, "larva", "hive", "buzzes", "nectar from flowers", "makes honey"),
+        ("camel", 3, "calf", "desert", "grunts", "desert plants", "stores fat in its hump"),
+        ("fish", 1, "fry", "water", "makes no sound", "small water plants and worms", "breathes with gills"),
+        ("butterfly", 3, "caterpillar", "garden", "makes no sound", "nectar of flowers", "grows from a caterpillar"),
+        ("monkey", 2, "infant", "tree", "chatters", "fruits and bananas", "climbs trees very well"),
+        ("penguin", 3, "chick", "cold Antarctica", "squawks", "fish", "is a bird that cannot fly but swims well"),
+        ("snake", 3, "snakelet", "holes in the ground", "hisses", "small animals and eggs", "crawls without legs"),
+        ("sparrow", 2, "chick", "nest", "chirps", "grains and insects", "is a small bird that lives near us"),
+        ("pigeon", 1, "squab", "nest", "coos", "grains", "carries messages in old times"),
+        ("buffalo", 2, "calf", "shed", "bellows", "grass", "gives us milk"),
+        ("donkey", 2, "foal", "shed", "brays", "grass and hay", "carries heavy loads"),
+        ("owl", 3, "owlet", "hole in a tree", "hoots", "insects and small rats", "sees clearly at night"),
+        ("crow", 1, "chick", "nest", "caws", "grains and food scraps", "is a clever common bird"),
+        ("buffalo", 2, "calf", "shed", "bellows", "grass", "gives us milk"),
+        ("goose", 2, "gosling", "pond side", "honks", "grains and grass", "swims with its webbed feet"),
+        ("kangaroo", 3, "joey", "grassland of Australia", "makes no typical sound", "plants and grass", "carries its baby in a pouch"),
+        ("giraffe", 3, "calf", "savanna", "makes low sounds", "leaves of tall trees", "has a very long neck to reach leaves"),
+        ("zebra", 3, "foal", "grassland", "barks and snorts", "grass", "has black and white stripes"),
+        ("crab", 3, "small crabs", "sea shore", "makes no sound", "small water creatures", "walks sideways"),
+        ("squirrel", 2, "kitten", "tree hollow", "chatters", "nuts and fruits", "stores nuts for winter"),
+        ("peacock", 2, "chick", "forest and gardens", "screams and dances", "grains and insects", "is our national bird"),
+    ]
+    out = []
+    for _ in range(n):
+        row = _rng.choice(table)
+        animal, stage, young, home, sound, food, special = row
+        style = _rng.randrange(5)
+        if style == 0:
+            q = _variants([f"What is the young one of a {animal} called?",
+                           f"A baby {animal} is called what?"])
+            out.append(_qa(stage, q, f"A baby {animal} is called a {young}."))
+        elif style == 1:
+            q = _variants([f"Where does a {animal} live?", f"What is the home of a {animal}?"])
+            out.append(_qa(stage, q, f"A {animal} lives in a {home}."))
+        elif style == 2:
+            q = f"What sound does a {animal} make?"
+            out.append(_qa(stage, q, f"A {animal} {sound}."))
+        elif style == 3:
+            q = _variants([f"What does a {animal} eat?", f"What is the food of a {animal}?"])
+            out.append(_qa(stage, q, f"A {animal} eats {food}."))
+        else:
+            out.append(_qa(stage, f"Tell one special thing about the {animal}.",
+                           f"The {animal} {special}."))
+    return out
+
+
+def _body_facts(n: int = 110) -> list[dict]:
+    table = [
+        ("heart", 3, "pumps blood to the whole body", "the chest"),
+        ("lungs", 3, "help us breathe in oxygen and breathe out carbon dioxide", "the chest"),
+        ("brain", 3, "controls all our body parts and helps us think and remember", "the head"),
+        ("stomach", 3, "digests the food we eat", "the belly"),
+        ("eyes", 1, "help us see", "the face"),
+        ("ears", 1, "help us hear", "the sides of the head"),
+        ("nose", 1, "helps us smell and breathe", "the face"),
+        ("tongue", 1, "helps us taste food", "inside the mouth"),
+        ("skin", 2, "covers and protects our whole body", "all over the body"),
+        ("bones", 2, "give shape and strength to our body", "inside the body"),
+        ("muscles", 4, "help our body move", "all over the body"),
+        ("teeth", 1, "help us bite and chew food", "in the mouth"),
+        ("kidneys", 4, "clean the blood and remove waste", "near the back of the belly"),
+    ]
+    out = []
+    for _ in range(n):
+        organ, stage, job, where = _rng.choice(table)
+        style = _rng.randrange(3)
+        if style == 0:
+            out.append(_qa(stage, _variants([f"What is the work of the {organ}?",
+                                             f"What does the {organ} do?"]),
+                           f"The {organ} {job}."))
+        elif style == 1:
+            if organ in ("eyes", "ears", "nose", "tongue"):
+                use = {"eyes": "see", "ears": "hear", "nose": "smell", "tongue": "taste"}[organ]
+                out.append(_qa(stage, f"Which body part do we use to {use}?",
+                               f"We use our {organ} to {use}."))
+            else:
+                out.append(_qa(stage, f"Where is the {organ} located?",
+                               f"The {organ} is in {where}."))
+        else:
+            out.append(_qa(stage, f"Is the {organ} important for us?",
+                           f"Yes, the {organ} is very important — it {job}."))
+    return out
+
+
+def _plant_facts(n: int = 100) -> list[dict]:
+    facts = [
+        (1, "Which part of the plant is under the ground?", "The roots are under the ground. They hold the plant and soak water."),
+        (1, "Which part of the plant makes food?", "The leaves make food for the plant using sunlight."),
+        (2, "What does the stem of a plant do?", "The stem holds the plant upright and carries water from the roots to the leaves."),
+        (2, "What do roots do for a plant?", "Roots hold the plant in the soil and absorb water and minerals."),
+        (2, "Why are leaves called the food factory of the plant?", "Because leaves make food for the whole plant using sunlight, air and water."),
+        (3, "What is photosynthesis?", "Photosynthesis is the process by which green leaves make food using sunlight, water and carbon dioxide, and give out oxygen."),
+        (3, "Why do plants need sunlight?", "Plants need sunlight to make their food by photosynthesis. Without sunlight they turn weak and pale."),
+        (3, "What parts grow into a new plant?", "A seed grows into a new plant when it gets soil, water and warmth."),
+        (4, "What is chlorophyll?", "Chlorophyll is the green colouring matter in leaves that traps sunlight for photosynthesis."),
+        (4, "How do insects help plants?", "Insects like bees carry pollen from flower to flower, which helps the plant make fruits and seeds."),
+    ]
+    out = []
+    for _ in range(n):
+        stage, q, a = _rng.choice(facts)
+        out.append(_qa(stage, q, a))
+    return out
+
+
+def _water_space_facts(n: int = 110) -> list[dict]:
+    facts = [
+        (1, "What is the water we drink called?", "The water we drink is called drinking water, and it should be clean and boiled or filtered."),
+        (2, "Name the three forms of water.", "Water has three forms — solid (ice), liquid (water) and gas (water vapour)."),
+        (2, "What happens when water is boiled?", "When water is boiled, it turns into steam (water vapour)."),
+        (2, "What happens when water is kept in a freezer?", "Water freezes into ice in a freezer."),
+        (3, "What is the water cycle?", "The sun turns water into vapour, vapour rises and forms clouds, clouds give rain, and rainwater flows back to rivers. This cycle keeps repeating."),
+        (3, "Why does it rain?", "Water vapour rises, cools down and forms clouds. When the water drops in clouds become heavy, they fall as rain."),
+        (3, "What are the sources of water?", "Rivers, lakes, ponds, wells, rains, glaciers and springs are sources of water."),
+        (3, "Which is the biggest source of light and heat for the Earth?", "The Sun is the biggest source of light and heat for the Earth."),
+        (3, "Does the Moon shine with its own light?", "No. The Moon reflects the Sun's light — it has no light of its own."),
+        (4, "Why do we have day and night?", "The Earth spins on its axis. The side facing the Sun has day, and the other side has night."),
+        (4, "What is a solar eclipse in simple words?", "A solar eclipse happens when the Moon comes between the Sun and the Earth and blocks the Sun's light."),
+        (4, "Which is the largest planet of our solar system?", "Jupiter is the largest planet of our solar system."),
+        (4, "Which planet is closest to the Sun?", "Mercury is the planet closest to the Sun."),
+        (4, "How many planets are there in our solar system?", "There are eight planets in our solar system."),
+        (4, "Why is the Earth called the blue planet?", "From space, the Earth looks blue because most of its surface is covered with water."),
+        (3, "What is a star?", "A star is a huge ball of burning gas that gives out its own light. The Sun is our nearest star."),
+        (4, "Which planet is called the red planet?", "Mars is called the red planet because its soil looks red."),
+        (4, "Which planet do we live on?", "We live on the Earth — the only planet known to have life."),
+        (4, "What are shooting stars really?", "A 'shooting star' is actually a small rock burning up when it enters the Earth's air."),
+        (3, "Why is the moon visible at night?", "The Moon reflects the Sun's light towards us, so we can see it at night."),
+        (3, "When is the moon a full moon?", "When the whole bright side of the Moon faces the Earth, we see a full moon — roughly once a month."),
+        (2, "Which is bigger — the sun or the moon — as seen by us?", "The Sun and the Moon look about the same size, but the Sun is really much, much bigger — it only looks smaller because it is far away."),
+        (4, "What is an orbit?", "An orbit is the curved path one object takes around another in space, like the Earth around the Sun."),
+        (4, "How long does the Earth take to go around the Sun?", "The Earth takes about 365 days — one year — to go around the Sun."),
+        (4, "How long does the Earth take to spin once?", "The Earth takes about 24 hours — one day — to spin once on its axis."),
+        (3, "What is solar energy in simple words?", "Solar energy is the energy we get from sunlight. Solar panels use it to make electricity."),
+    ]
+    out = []
+    for _ in range(n):
+        stage, q, a = _rng.choice(facts)
+        out.append(_qa(stage, q, a))
+    return out
+
+
+def _health_safety_facts(n: int = 110) -> list[dict]:
+    facts = [
+        (1, "What should we do before eating?", "We should wash our hands with soap before eating."),
+        (1, "Why should we brush our teeth?", "Brushing keeps our teeth clean and stops tooth decay. We brush twice a day."),
+        (1, "What should we do with fruit before eating it?", "We should wash fruits with clean water before eating them."),
+        (2, "Why should we exercise?", "Exercise keeps our body strong, our heart healthy and our mind fresh."),
+        (2, "Why is sleep important?", "Sleep gives our body rest and helps us grow. Children need about 8 to 10 hours of sleep."),
+        (2, "What should we do when the traffic light is red?", "When the light is red, we must stop. We cross only when it is safe, at the zebra crossing."),
+        (2, "Why should we not play on the road?", "The road is for vehicles. Playing there can cause accidents, so we play in parks or playgrounds."),
+        (3, "Why should we drink clean water?", "Dirty water carries germs that cause diseases like typhoid and diarrhoea. Clean water keeps us healthy."),
+        (3, "What is a balanced diet?", "A balanced diet has all kinds of food — energy-giving grains, body-building proteins like dal and eggs, and protective fruits and vegetables — in the right amounts."),
+        (3, "Why should we not eat food that has fallen on the floor?", "Germs stick to food that falls on the floor. Eating it can make us sick."),
+        (4, "What are first-aid basics for a small cut?", "Wash the cut with clean water, press with a clean cloth to stop bleeding, and cover it with a clean bandage. Tell an adult."),
+        (4, "Why is vaccination important?", "Vaccines protect us from dangerous diseases by making our body ready to fight germs."),
+        (4, "Why should we cover our mouth while sneezing?", "Sneezing throws out tiny drops full of germs. Covering the mouth stops these germs from spreading to others."),
+    ]
+    out = []
+    for _ in range(n):
+        stage, q, a = _rng.choice(facts)
+        out.append(_qa(stage, q, a))
+    return out
+
+
+def _habitat_environment_facts(n: int = 90) -> list[dict]:
+    facts = [
+        (3, "What is a habitat?", "A habitat is the natural home of a plant or animal, with the food, water and shelter it needs."),
+        (3, "Where do desert animals like camels live and how do they manage?", "Deserts are hot and dry. Camels store fat in their humps and can stay long without water."),
+        (3, "How is a fish suited to live in water?", "A fish has gills to breathe in water, fins to swim and a streamlined body."),
+        (3, "Why do polar bears have thick fur?", "Polar bears live in very cold places. Thick fur keeps their body warm."),
+        (4, "What is the food chain in simple words?", "A food chain shows who eats whom — grass is eaten by a grasshopper, the grasshopper by a frog, the frog by a snake, and the snake by an eagle."),
+        (4, "Why should we not cut trees?", "Trees give us oxygen, food, shade and wood. Their roots hold the soil, and birds nest in them. Cutting trees harms everyone."),
+        (4, "What is deforestation and why is it harmful?", "Cutting forests on a large scale is deforestation. It destroys animal homes, causes floods and increases pollution."),
+        (4, "What can we do to keep our environment clean?", "Use dustbins, avoid plastic, plant trees, save water and electricity, and keep our surroundings clean."),
+        (4, "Why are earthworms called friends of the farmer?", "Earthworms make the soil loose and airy, and their waste makes the soil rich, which helps crops grow."),
+    ]
+    out = []
+    for _ in range(n):
+        stage, q, a = _rng.choice(facts)
+        out.append(_qa(stage, q, a))
+    return out
+
+
+def _cause_effect_science(n: int = 70) -> list[dict]:
+    pairs = [
+        (2, "Why does ice cream melt in the sun?", "Because the Sun's heat raises its temperature and turns solid ice cream into liquid."),
+        (2, "Why do we wear light clothes in summer?", "Light and white clothes do not absorb much heat, so we feel cool and comfortable."),
+        (2, "Why do we sweat in summer?", "Sweating cools our body — when sweat dries, it takes away heat from the skin."),
+        (3, "Why does a metal spoon become hot in hot tea?", "Metal is a good conductor of heat, so heat travels from the tea to the spoon."),
+        (3, "Why do wet clothes dry faster in the sun?", "Sunlight and wind speed up evaporation, so the water in the clothes turns into vapour quickly."),
+        (3, "Why do we see lightning before we hear thunder?", "Light travels much faster than sound, so the flash of lightning reaches us before the sound of thunder."),
+        (3, "Why do we feel cold near a waterfall or after rain?", "Evaporation is fast there, and evaporating water takes away heat, which cools the air."),
+        (4, "Why does a ball thrown up come back down?", "Because gravity pulls every object towards the Earth."),
+        (4, "Why do we see our reflection in still water?", "Still water acts like a smooth mirror and reflects light, forming an image."),
+        (4, "Why do boats float while a stone sinks?", "A boat's shape holds a lot of air, so it floats; a stone is heavy and dense, so it sinks."),
+    ]
+    out = []
+    for _ in range(n):
+        stage, q, a = _rng.choice(pairs)
+        out.append(_qa(stage, q, a))
     return out

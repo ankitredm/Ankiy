@@ -55,8 +55,17 @@ def save_checkpoint(
     *,
     tag: str | None = None,
     tokenizer_vocab_size: int | None = None,
+    save_optimizer: bool = True,
 ) -> Path:
-    """Save a training checkpoint. Returns the checkpoint directory path."""
+    """Save a training checkpoint. Returns the checkpoint directory path.
+
+    ``save_optimizer=False`` writes a model-only checkpoint (no
+    optimizer.pt/scheduler.pt). Such checkpoints can be loaded for
+    inference/evaluation but NOT for training resume — which is exactly what
+    we want for the tracked ``best`` validation checkpoint: it is kept
+    up to date cheaply, while the periodic ``step_*`` checkpoints always
+    carry full optimizer state.
+    """
     ckpt_dir = Path(ckpt_dir)
     name = f"step_{step}" if tag is None else f"{tag}_step_{step}"
     out_dir = ckpt_dir / name
@@ -72,12 +81,13 @@ def save_checkpoint(
     )
 
     # 2. Optimizer + scheduler state -> .pt (pickle is fine here; it's our own).
-    opt_path = out_dir / "optimizer.pt"
-    torch.save(optimizer.state_dict(), str(opt_path))
-    sched_state = scheduler.state_dict() if scheduler is not None else None
-    sched_path = out_dir / "scheduler.pt"
-    if sched_state is not None:
-        torch.save(sched_state, str(sched_path))
+    if save_optimizer:
+        opt_path = out_dir / "optimizer.pt"
+        torch.save(optimizer.state_dict(), str(opt_path))
+        sched_state = scheduler.state_dict() if scheduler is not None else None
+        sched_path = out_dir / "scheduler.pt"
+        if sched_state is not None:
+            torch.save(sched_state, str(sched_path))
 
     # 3. Metadata -> JSON
     meta = {

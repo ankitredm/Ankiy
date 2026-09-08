@@ -1,0 +1,50 @@
+# ANKIT 0.1 — foundation training run, Stage 1 — Class 1 foundations (alphabet, counting, add/sub within 10-20, shapes, patterns)
+#
+# Full-curriculum run on the EXPANDED corpus (~1.72M train tokens, 8,307 docs).
+# total_steps is CUMULATIVE across the chain; every stage config points at the
+# SAME output_dir (checkpoints/ankit_full) and resumes from the previous stage's
+# final checkpoint (warm-restart cosine at each stage boundary).
+#
+# Run order:  python training/train.py --config configs/curriculum/full_stage1.yaml
+
+name: ankit-0-1
+
+model:
+  vocab_size: 16384
+  d_model: 512
+  n_layers: 10
+  n_heads: 8
+  context_length: 256
+  ffn_dim: 2048
+  activation: gelu
+  dropout: 0.1
+  norm_eps: 1e-5
+  init_std: 0.02
+  tie_embedding: false
+  use_bias: false
+
+training:
+  batch_size: 4
+  grad_accumulation_steps: 4   # effective batch 16 sequences (~4,096 tokens/step)
+  learning_rate: 0.0006
+  weight_decay: 0.1
+  warmup_steps: 80
+  total_steps: 140
+  checkpoint_interval: 0
+  eval_interval: 100
+  eval_steps: 30
+  max_grad_norm: 1.0
+  seed: 1337
+  precision: fp32
+  device: cpu
+  output_dir: checkpoints/ankit_full
+  tokenizer_path: tokenizer/ankit_tokenizer.json
+  train_data: data/tokenized/curriculum/stage1_train.bin
+  val_data: data/tokenized/curriculum/val.bin
+  test_data: data/tokenized/curriculum/test.bin
+
+# Provenance — filled in automatically at training time.
+git_commit: ""
+dataset_version: "curriculum-class1-4-v2-expanded"
+tokenizer_version: "v0.1-curriculum-expanded"
+notes: "Full Class 1-4 foundation training on the expanded curriculum corpus."

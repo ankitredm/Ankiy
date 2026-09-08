@@ -26,6 +26,7 @@ ANTI-SHORTCUT GUARANTEES
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import os
 import sys
@@ -39,6 +40,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import torch
 import torch.nn.functional as F
 from safetensors.torch import load_file
+
+# Use every CPU core we have. Some sandboxes default the intra-op pool to a
+# single thread even when multiple cores exist, which would ~2x slow training
+# down. Respect an explicit ANKIT_NUM_THREADS, else use all detected cores.
+try:
+    torch.set_num_threads(int(os.environ.get("ANKIT_NUM_THREADS", str(os.cpu_count() or 1))))
+except Exception:  # pragma: no cover - never block training on this
+    pass
 
 from model import AnkitModel
 from model.config import Config, ModelConfig
@@ -289,6 +298,15 @@ def run_training(config: Config) -> None:
     total_loss_count = 0
     step = start_step
     micro_batches_in_window = 0  # backward passes since the last optimizer step
+    _best_val = [float("inf"), start_step]  # [best val loss, step]
+    if start_step > 0:
+        # Resuming: keep prior best (if recorded) so best-tracking spans stages.
+        best_file = Path(tcfg.output_dir) / "best_val.json"
+        if best_file.exists():
+            try:
+                _best_val = list(json.loads(best_file.read_text()))
+            except Exception:
+                pass
     t_start = time.time()
 
     print(
@@ -330,6 +348,30 @@ def run_training(config: Config) -> None:
                 model, val_loader, device, max_batches=tcfg.eval_steps
             )
             print(f"    [eval] val loss {val_loss:.4f} | ppl {math.exp(min(val_loss, 20)):.2f}")
+            # Track the BEST validation checkpoint (model-only, cheap to keep).
+            if val_loss == val_loss and val_loss < _best_val[0]:
+                _best_val[0] = val_loss
+                _best_val[1] = step
+                save_checkpoint(
+                    Path(tcfg.output_dir),
+                    model,
+                    optimizer,
+                    scheduler,
+                    step,
+                    config,
+                    tokenizer_version="v0.1",
+                    seed=config.training.seed,
+                    tag="best",
+                    tokenizer_vocab_size=tokenizer.vocab_size,
+                    save_optimizer=False,
+                )
+                (Path(tcfg.output_dir) / "best_val.json").write_text(
+                    json.dumps([_best_val[0], _best_val[1]]))
+                import shutil
+                for old_best in Path(tcfg.output_dir).glob("best_step_*"):
+                    if old_best.name != f"best_step_{step}":
+                        shutil.rmtree(old_best, ignore_errors=True)
+                print(f"    [best] new best val loss {val_loss:.4f} (step {step}) -> best_step_{step}")
 
         # ---- Checkpoint ----
         if tcfg.checkpoint_interval > 0 and step % tcfg.checkpoint_interval == 0:

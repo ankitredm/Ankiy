@@ -202,4 +202,201 @@ def build() -> list[dict]:
     ]
     for stage, text in drills:
         out.append(item(stage, "qa", text))
+
+    # -- Expanded parametric practice (foundation-training scale-up) ---------
+    out += _states_capitals(n=230)
+    out += _national_symbols(n=120)
+    out += _occupations_places(n=170)
+    out += _festivals_india(n=150)
+    out += _landmarks_rivers(n=140)
+    out += _civics_community(n=130)
+    out += _direction_maps_drills(n=110)
+    return out
+
+
+# ===========================================================================
+# Expanded parametric practice — foundation-training scale-up.
+# ===========================================================================
+import random as _random
+
+_rng = _random.Random(20240505)
+
+
+def _qa(stage: int, q: str, a: str) -> dict:
+    return item(stage, "qa", f"Question: {q}\nAnswer: {a}")
+
+
+def _states_capitals(n: int = 150) -> list[dict]:
+    table = [
+        ("Uttar Pradesh", "Lucknow"), ("Maharashtra", "Mumbai"), ("Karnataka", "Bengaluru"),
+        ("Tamil Nadu", "Chennai"), ("West Bengal", "Kolkata"), ("Gujarat", "Gandhinagar"),
+        ("Rajasthan", "Jaipur"), ("Kerala", "Thiruvananthapuram"), ("Bihar", "Patna"),
+        ("Odisha", "Bhubaneswar"), ("Assam", "Dispur"), ("Punjab", "Chandigarh"),
+        ("Haryana", "Chandigarh"), ("Madhya Pradesh", "Bhopal"), ("Telangana", "Hyderabad"),
+        ("Andhra Pradesh", "Amaravati"), ("Goa", "Panaji"), ("Sikkim", "Gangtok"),
+        ("Meghalaya", "Shillong"), ("Manipur", "Imphal"), ("Tripura", "Agartala"),
+        ("Nagaland", "Kohima"), ("Mizoram", "Aizawl"), ("Arunachal Pradesh", "Itanagar"),
+        ("Uttarakhand", "Dehradun"), ("Himachal Pradesh", "Shimla"), ("Jharkhand", "Ranchi"),
+        ("Chhattisgarh", "Raipur"),
+    ]
+    out = []
+    for _ in range(n):
+        state, capital = _rng.choice(table)
+        if _rng.random() < 0.5:
+            out.append(_qa(3, _rng.choice([
+                f"What is the capital of {state}?",
+                f"Name the capital city of {state}.",
+            ]), f"The capital of {state} is {capital}."))
+        else:
+            out.append(_qa(3, _rng.choice([
+                f"{capital} is the capital of which Indian state?",
+                f"Which state has {capital} as its capital?",
+            ]), f"{capital} is the capital of {state}."))
+    return out
+
+
+def _national_symbols(n: int = 60) -> list[dict]:
+    facts = [
+        (2, "What is the national animal of India?", "The Royal Bengal Tiger is the national animal of India."),
+        (2, "What is the national bird of India?", "The peacock is the national bird of India."),
+        (2, "What is the national flower of India?", "The lotus is the national flower of India."),
+        (2, "What is the national fruit of India?", "The mango is the national fruit of India."),
+        (3, "What is the national tree of India?", "The banyan tree is the national tree of India."),
+        (3, "What is the national game of India?", "Hockey is considered the national game of India."),
+        (3, "What do the three colours of our flag mean?", "Saffron stands for courage and sacrifice, white for peace and truth, and green for growth and fertility."),
+        (3, "What is written at the bottom of our national emblem?", "Satyameva Jayate — 'Truth alone triumphs' — is written below the Lion Capital of Ashoka."),
+        (3, "Who wrote our national anthem?", "Rabindranath Tagore wrote our national anthem, 'Jana Gana Mana'."),
+        (3, "What is the national anthem of India?", "The national anthem of India is 'Jana Gana Mana', written by Rabindranath Tagore."),
+        (3, "What is the national song of India?", "The national song of India is 'Vande Mataram', written by Bankim Chandra Chatterjee."),
+        (4, "What is the national aquatic animal of India?", "The Ganges river dolphin is the national aquatic animal of India."),
+        (4, "When do we celebrate Independence Day?", "We celebrate Independence Day on 15 August every year."),
+        (4, "When do we celebrate Republic Day?", "We celebrate Republic Day on 26 January every year."),
+        (4, "Whose birthday is celebrated as Children's Day in India?", "Children's Day is celebrated on 14 November, the birthday of Pandit Jawaharlal Nehru."),
+        (4, "Who is called the Father of the Nation in India?", "Mahatma Gandhi is called the Father of the Nation. His birthday, 2 October, is Gandhi Jayanti."),
+    ]
+    out = []
+    for _ in range(n):
+        stage, q, a = _rng.choice(facts)
+        out.append(_qa(stage, q, a))
+    return out
+
+
+def _occupations_places(n: int = 110) -> list[dict]:
+    table = [
+        ("teacher", 1, "school", "teaches students"),
+        ("doctor", 1, "hospital or clinic", "treats sick people"),
+        ("farmer", 1, "fields", "grows crops for us"),
+        ("postman", 2, "post office", "brings letters and parcels"),
+        ("chef", 2, "kitchen or restaurant", "cooks delicious food"),
+        ("pilot", 2, "aeroplane", "flies aeroplanes"),
+        ("tailor", 2, "tailor shop", "stitches clothes"),
+        ("carpenter", 2, "workshop", "makes furniture from wood"),
+        ("electrician", 3, "homes and offices", "repairs electrical fittings"),
+        ("dentist", 3, "dental clinic", "takes care of our teeth"),
+        ("librarian", 3, "library", "manages and issues books"),
+        ("firefighter", 3, "fire station", "puts out fires and rescues people"),
+        ("police officer", 2, "police station", "catches thieves and keeps us safe"),
+        ("fisherman", 2, "sea or river bank", "catches fish for us"),
+        ("vet", 4, "animal clinic", "treats sick animals"),
+        ("architect", 4, "office and building sites", "designs buildings"),
+    ]
+    out = []
+    for _ in range(n):
+        who, stage, where, job = _rng.choice(table)
+        style = _rng.randrange(3)
+        if style == 0:
+            out.append(_qa(stage, f"Where does a {who} work?",
+                           f"A {who} works in {where}."))
+        elif style == 1:
+            out.append(_qa(stage, f"What does a {who} do?",
+                           f"A {who} {job}."))
+        else:
+            out.append(_qa(stage, f"Who {job}s — name the community helper."
+                           if job.endswith("s") else f"Who does the work of {job[:-1]}ing? Name the helper.",
+                           f"A {who} {job}."))
+    return out
+
+
+def _festivals_india(n: int = 90) -> list[dict]:
+    facts = [
+        (2, "Which festival is called the festival of lights?", "Diwali is called the festival of lights. We light diyas and share sweets."),
+        (2, "Which festival is celebrated with colours?", "Holi is celebrated with colours. People play with gulal and eat gujiya."),
+        (2, "Which festival is known for kite flying in January?", "Makar Sankranti is famous for kite flying. People also make til-gud sweets."),
+        (3, "Which festival celebrates the birth of Lord Krishna?", "Janmashtami celebrates the birth of Lord Krishna. People make little cradles and do dahi-handi."),
+        (3, "Which harvest festival of Tamil Nadu thanks the Sun?", "Pongal is the Tamil harvest festival that thanks the Sun and nature."),
+        (3, "Which festival celebrates the bond between brothers and sisters?", "Raksha Bandhan celebrates the bond — sisters tie a rakhi on their brothers' wrists."),
+        (3, "What is Eid-ul-Fitr known for?", "Eid-ul-Fitr comes after the holy month of Ramzan. People pray, hug each other and enjoy sewaiyan."),
+        (3, "What is Christmas celebrated for?", "Christmas celebrates the birth of Jesus Christ on 25 December. People decorate trees and share gifts."),
+        (4, "Why is Dussehra celebrated?", "Dussehra marks the victory of good over evil — Lord Rama's victory over Ravana. Effigies of Ravana are burnt."),
+        (4, "What is Onam famous for?", "Onam is Kerala's harvest festival with flower carpets (pookalam), boat races and the grand Onam Sadhya meal."),
+        (4, "Why do people celebrate Guru Nanak Jayanti?", "It celebrates the birthday of Guru Nanak Dev Ji, the first Guru of the Sikhs, with prayers and langar."),
+    ]
+    out = []
+    for _ in range(n):
+        stage, q, a = _rng.choice(facts)
+        out.append(_qa(stage, q, a))
+    return out
+
+
+def _landmarks_rivers(n: int = 80) -> list[dict]:
+    facts = [
+        (3, "In which city is the Taj Mahal?", "The Taj Mahal is in Agra, on the banks of the Yamuna river."),
+        (3, "Who built the Taj Mahal and why?", "Emperor Shah Jahan built the Taj Mahal in memory of his wife Mumtaz Mahal."),
+        (3, "Which is the longest river in India?", "The Ganga is the longest river flowing within India."),
+        (3, "Which river flows through Delhi?", "The Yamuna flows through Delhi."),
+        (3, "Which is the highest mountain range in the world?", "The Himalayas are the highest mountain range in the world."),
+        (3, "Which ocean lies to the south of India?", "The Indian Ocean lies to the south of India."),
+        (3, "What is the capital of India?", "New Delhi is the capital of India."),
+        (4, "Which city is called the Pink City?", "Jaipur is called the Pink City."),
+        (4, "Which Indian city is called the City of Joy?", "Kolkata is called the City of Joy."),
+        (4, "What is the Thar?", "The Thar is a big hot desert in the north-west of India, mostly in Rajasthan."),
+        (4, "Which strait or water body separates India from Sri Lanka?", "The Palk Strait separates India from Sri Lanka."),
+        (4, "Why are rivers like the Ganga important for farmers?", "River water is used to water the fields, so farming flourishes along the river banks."),
+    ]
+    out = []
+    for _ in range(n):
+        stage, q, a = _rng.choice(facts)
+        out.append(_qa(stage, q, a))
+    return out
+
+
+def _civics_community(n: int = 80) -> list[dict]:
+    facts = [
+        (1, "Who is the head of a school?", "The principal is the head of a school."),
+        (2, "Why do we follow rules on the road?", "Rules keep everyone safe — traffic lights and zebra crossings prevent accidents."),
+        (2, "Who keeps our city clean?", "Municipal workers (safai karamcharis) keep our city clean; we must also use dustbins and not litter."),
+        (2, "What does a sarpanch do?", "A sarpanch is the head of a village panchayat and helps solve village problems."),
+        (3, "What is a family?", "A family is a group of people who live together or stay close, love and care for each other."),
+        (3, "What is a neighbourhood?", "A neighbourhood is the area near our home, with the people and places around us."),
+        (3, "Why is voting important?", "Voting lets people choose their leaders. Every citizen's vote decides who will make decisions for everyone."),
+        (4, "What are fundamental duties in simple words?", "Fundamental duties are the good things every citizen should do — respect the flag and anthem, keep the country clean, protect public property and help others."),
+        (4, "What is 'unity in diversity'?", "India has many languages, religions, foods and dresses, yet all Indians live together as one nation."),
+        (4, "Why should we respect all jobs and workers?", "Every worker's job helps society — a farmer, a doctor, a sweeper and a teacher all do important work, so all deserve equal respect."),
+    ]
+    out = []
+    for _ in range(n):
+        stage, q, a = _rng.choice(facts)
+        out.append(_qa(stage, q, a))
+    return out
+
+
+def _direction_maps_drills(n: int = 70) -> list[dict]:
+    out = []
+    for _ in range(n):
+        style = _rng.randrange(3)
+        if style == 0:
+            out.append(_qa(2, _rng.choice([
+                "In which direction does the sun rise?",
+                "Which direction does the sun rise from?",
+            ]), "The sun rises in the east."))
+        elif style == 1:
+            face = _rng.choice(["east", "west", "north", "south"])
+            behind = {"east": "west", "west": "east", "north": "south", "south": "north"}[face]
+            out.append(_qa(3, f"If you face {face}, which direction is behind you?",
+                           f"If you face {face}, then {behind} is behind you."))
+        else:
+            out.append(_qa(4, _rng.choice([
+                "On a map, which direction is at the top?",
+                "Which direction is shown at the top of most maps?",
+            ]), "On most maps, north is at the top, south at the bottom, east on the right and west on the left."))
     return out

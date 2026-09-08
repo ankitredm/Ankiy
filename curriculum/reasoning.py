@@ -244,4 +244,252 @@ def build() -> list[dict]:
     # Passage comprehension: (stage, full_text_with_embedded_questions).
     for stage, text in _PASSAGES:
         out.append(item(stage, "comprehension", text))
+
+    # -- Expanded parametric practice (foundation-training scale-up) ---------
+    out += _number_patterns(n=280)
+    out += _odd_one_out(n=220)
+    out += _analogies(n=180)
+    out += _age_relation_riddles(n=150)
+    out += _classification_lists(n=140)
+    out += _multi_step_instruction_tasks(n=110)
+    out += _day_logic(n=110)
+    return out
+
+
+# ===========================================================================
+# Expanded parametric practice — foundation-training scale-up.
+# ===========================================================================
+import random as _random
+
+_rng = _random.Random(20240506)
+
+
+def _qa(stage: int, kind: str, q: str, a: str) -> dict:
+    return item(stage, kind, f"Question: {q}\nAnswer: {a}")
+
+
+def _number_patterns(n: int = 150) -> list[dict]:
+    out = []
+    for _ in range(n):
+        style = _rng.randrange(5)
+        if style == 0:  # +d
+            a = _rng.randint(1, 20); d = _rng.randint(2, 9)
+            seq = [a + d * i for i in range(5)]
+        elif style == 1:  # -d (stays positive)
+            d = _rng.randint(2, 9)
+            a = _rng.randint(10 + 4 * d, 90)
+            seq = [a - d * i for i in range(5)]
+        elif style == 2:  # x2
+            a = _rng.randint(1, 6)
+            seq = [a * 2 ** i for i in range(5)]
+        elif style == 3:  # alternating +a -b
+            a = _rng.randint(2, 10); b = _rng.randint(1, 8); x = _rng.randint(5, 30)
+            seq = [x, x + a, x + a - b, x + 2 * a - b, x + 2 * a - 2 * b]
+        else:  # skip counting
+            a = _rng.randint(2, 12); k = _rng.choice([5, 10, 25])
+            seq = [a * k, (a + 1) * k, (a + 2) * k, (a + 3) * k]
+        seq_str = ", ".join(str(x) for x in seq)
+        nxt = {"style0": seq[-1] + d if style == 0 else None,
+               "s1": seq[-1] - d if style == 1 else None}.get("style0") or \
+              (seq[-1] - d if style == 1 else seq[-1] * 2 if style == 2 else None)
+        if style in (0, 1):
+            nxt = seq[-1] + (d if style == 0 else -d)
+            rule = f"add {d}" if style == 0 else f"subtract {d}"
+        elif style == 2:
+            nxt = seq[-1] * 2
+            rule = "double the last number"
+        elif style == 3:
+            nxt = x + 3 * a - 2 * b - (x + 2 * a - 2 * b) + seq[-1] if False else seq[-1] + a
+            rule = f"add {a}, then subtract {b}, and repeat"
+        else:
+            nxt = seq[-1] + k
+            rule = f"skip count in {k}s"
+        out.append(_qa(_rng.choice([2, 3, 4]), "pattern",
+                       f"Find the next number: {seq_str}, ___",
+                       f"The pattern is to {rule}. The next number is {nxt}. ({seq_str}, {nxt})"))
+    return out
+
+
+def _odd_one_out(n: int = 120) -> list[dict]:
+    groups = [
+        (["apple", "mango", "banana", "carrot"], "carrot", "carrot is a vegetable; the rest are fruits"),
+        (["dog", "cat", "cow", "sparrow"], "sparrow", "sparrow is a bird; the rest are animals/mammals"),
+        (["rose", "lotus", "marigold", "mango tree"], "mango tree", "mango tree is a tree; the rest are flowers"),
+        (["bus", "car", "cycle", "boat"], "boat", "boat moves on water; the rest run on roads"),
+        (["pen", "pencil", "eraser", "apple"], "apple", "apple is a fruit; the rest are stationery items"),
+        (["sun", "moon", "star", "lamp"], "lamp", "lamp is made by people; the rest are in the sky"),
+        (["parrot", "crow", "bat", "sparrow"], "bat", "bat is a mammal; the rest are birds"),
+        (["snake", "lizard", "crocodile", "frog"], "frog", "frog is an amphibian; the rest are reptiles"),
+        (["one", "two", "three", "letter"], "letter", "letter is not a number; the rest are numbers"),
+        (["Monday", "Tuesday", "January", "Friday"], "January", "January is a month; the rest are days of the week"),
+        (["eyes", "ears", "nose", "shoes"], "shoes", "shoes are worn; the rest are body parts"),
+        (["Ganga", "Yamuna", "Krishna", "Mount Everest"], "Mount Everest", "Mount Everest is a mountain; the rest are rivers"),
+        (["Delhi", "Mumbai", "Chennai", "Nepal"], "Nepal", "Nepal is a country; the rest are Indian cities"),
+        (["2", "4", "6", "7"], "7", "7 is an odd number; the rest are even"),
+        (["3", "5", "8", "11"], "8", "8 is even; the rest are odd numbers"),
+        (["triangle", "square", "circle", "cube"], "cube", "cube is a 3-D solid; the rest are flat (2-D) shapes"),
+        (["milk", "curd", "butter", "lemon"], "lemon", "lemon is not a dairy product; the rest come from milk"),
+        (["winter", "summer", "monsoon", "Monday"], "Monday", "Monday is a day; the rest are seasons"),
+        (["poet", "poem", "story", "letter"], "poet", "poet is a person; the rest are written things"),
+        (["walk", "run", "jump", "chair"], "chair", "chair is a thing; the rest are actions (verbs)"),
+        (["gold", "silver", "iron", "cloth"], "cloth", "cloth is not a metal; the rest are metals"),
+        (["heptagon", "hexagon", "pentagon", "protractor"], "protractor", "protractor is a measuring tool; the rest are shapes"),
+        (["sofa", "bed", "table", "garden"], "garden", "garden is outdoors; the rest are furniture in a home"),
+        (["cricket", "football", "hockey", "chess"], "chess", "chess is an indoor board game; the rest are field games"),
+        (["sewing machine", "needle", "thread", "houseboat"], "houseboat", "houseboat is a boat; the rest are used for stitching"),
+        (["Celsius", "kilometre", "litre", "kilogram"], "Celsius", "Celsius measures temperature; the rest measure length, volume and weight"),
+        (["byte", "kilobyte", "megabyte", "kilometre"], "kilometre", "kilometre measures distance; the rest measure computer data"),
+        (["sunflower oil", "coconut oil", "groundnut oil", "castor oil plant"], "castor oil plant", "it is a plant; the rest are cooking oils"),
+        (["Ganga", "Amazon", "Nile", "Everest"], "Everest", "Everest is a mountain; the rest are rivers"),
+        (["printer", "keyboard", "mouse", "blackboard"], "blackboard", "blackboard belongs to a classroom; the rest are computer parts"),
+        (["mango pickle", "lemon pickle", "chilli pickle", "mango shake"], "mango shake", "mango shake is a drink; the rest are pickles"),
+    ]
+    out = []
+    for _ in range(n):
+        items_, odd, why = _rng.choice(groups)
+        shuffled = items_[:]; _rng.shuffle(shuffled)
+        out.append(_qa(_rng.choice([1, 2, 3]), "reasoning",
+                       f"Find the odd one out: {', '.join(shuffled)}",
+                       f"'{odd}' is the odd one out because {why}."))
+    return out
+
+
+def _analogies(n: int = 90) -> list[dict]:
+    pairs = [
+        ("Dog is to puppy as cat is to ___", "kitten", "a baby dog is a puppy, so a baby cat is a kitten"),
+        ("Cow is to calf as horse is to ___", "foal", "a baby cow is a calf, so a baby horse is a foal"),
+        ("Hen is to chick as duck is to ___", "duckling", "a baby hen is a chick, so a baby duck is a duckling"),
+        ("Hand is to glove as foot is to ___", "shoe", "we wear a glove on a hand, so we wear a shoe on a foot"),
+        ("Fish is to water as bird is to ___", "air/sky", "a fish lives in water, so a bird lives in the air"),
+        ("Teacher is to school as doctor is to ___", "hospital", "a teacher works in a school, so a doctor works in a hospital"),
+        ("Hot is to cold as happy is to ___", "sad", "hot and cold are opposites, so the opposite of happy is sad"),
+        ("Big is to small as tall is to ___", "short", "big and small are opposites, so the opposite of tall is short"),
+        ("Sun is to day as moon is to ___", "night", "the sun shines in the day, so the moon shines at night"),
+        ("Pen is to write as knife is to ___", "cut", "we write with a pen, so we cut with a knife"),
+        ("Water is to drink as bread is to ___", "eat", "we drink water, so we eat bread"),
+        ("Book is to read as song is to ___", "sing/listen", "we read a book, so we sing or listen to a song"),
+        ("Farmer is to field as chef is to ___", "kitchen", "a farmer works in a field, so a chef works in a kitchen"),
+        ("Wings are to bird as legs are to ___", "human/animal", "birds use wings to move, so humans and animals use legs"),
+        ("Milk is to cow as wool is to ___", "sheep", "milk comes from a cow, so wool comes from a sheep"),
+        ("Bee is to hive as bird is to ___", "nest", "a bee lives in a hive, so a bird lives in a nest"),
+        ("Sweet is to sugar as sour is to ___", "lemon/tamarind", "sugar tastes sweet, so lemon tastes sour"),
+        ("Rain is to umbrella as sun is to ___", "cap/sunglasses", "we use an umbrella in rain, so we use a cap or sunglasses in the sun"),
+        ("Ear is to hear as eye is to ___", "see", "we hear with the ear, so we see with the eye"),
+        ("Page is to book as brick is to ___", "wall", "pages make a book, so bricks make a wall"),
+    ]
+    out = []
+    for _ in range(n):
+        q, a, why = _rng.choice(pairs)
+        out.append(_qa(_rng.choice([2, 3, 4]), "reasoning",
+                       f"Complete the analogy: {q}?",
+                       f"{a.capitalize()}. Because {why}."))
+    return out
+
+
+def _age_relation_riddles(n: int = 90) -> list[dict]:
+    out = []
+    for _ in range(n):
+        style = _rng.randrange(3)
+        if style == 0:  # age after/before
+            name = _rng.choice(["Ravi", "Meera", "Aman", "Sita", "Kiran"])
+            now = _rng.randint(6, 40); k = _rng.randint(2, 12)
+            future = _rng.random() < 0.5
+            q = f"{name} is {now} years old now. How old will {name} be after {k} years?" if future else \
+                f"{name} is {now} years old now. How old was {name} {k} years ago?"
+            a = f"{name} will be {now + k} years old after {k} years ({now} + {k} = {now + k})." if future else \
+                f"{name} was {now - k} years old {k} years ago ({now} - {k} = {now - k})."
+            out.append(_qa(3, "reasoning", q, a))
+        elif style == 1:  # family relations
+            rels = [
+                ("Your mother's brother", "uncle (mama)"),
+                ("Your father's sister", "aunt (bua)"),
+                ("Your mother's mother", "grandmother (nani)"),
+                ("Your father's father", "grandfather (dada)"),
+                ("Your uncle's child", "cousin"),
+                ("Your sister's daughter", "niece"),
+                ("Your brother's son", "nephew"),
+            ]
+            rel, ans = _rng.choice(rels)
+            out.append(_qa(2, "reasoning", f"What relation is your {rel.lower()} to you?",
+                           f"Your {rel.lower()} is your {ans}."))
+        else:  # comparing heights/ages
+            n1, n2, n3 = _rng.sample(["Om", "Anu", "Ram", "Zoya", "Ved", "Ira"], 3)
+            order = [n1, n2, n3]; _rng.shuffle(order)
+            tallest, mid, shortest = order
+            out.append(_qa(3, "reasoning",
+                           f"{tallest} is taller than {mid}, and {mid} is taller than {shortest}. Who is the tallest and who is the shortest?",
+                           f"{tallest} is the tallest and {shortest} is the shortest."))
+    return out
+
+
+def _classification_lists(n: int = 80) -> list[dict]:
+    banks = [
+        (1, "living things", ["plant", "dog", "bird", "fish", "tree", "human"], "non-living things", ["chair", "rock", "car", "ball", "table"]),
+        (1, "colours", ["red", "blue", "green", "yellow", "pink"], "not colours", ["dog", "table", "mango", "pen"]),
+        (2, "fruits", ["mango", "banana", "apple", "guava", "papaya"], "vegetables", ["potato", "carrot", "cabbage", "spinach"]),
+        (2, "things we wear", ["shirt", "shoes", "cap", "socks", "frock"], "things we eat", ["rice", "milk", "egg", "roti"]),
+        (3, "birds", ["sparrow", "parrot", "crow", "peacock", "pigeon"], "insects", ["ant", "bee", "butterfly", "mosquito"]),
+        (3, "sources of water", ["river", "well", "rain", "lake", "spring"], "man-made things at home", ["chair", "fan", "cup", "sofa"]),
+        (4, "planets", ["Mercury", "Venus", "Earth", "Mars", "Jupiter"], "stars we can name", ["Sun", "Polaris (North Star)"]),
+        (4, "renewable resources", ["sunlight", "wind", "rain water"], "non-renewable resources", ["coal", "petrol", "diesel"]),
+    ]
+    out = []
+    for _ in range(n):
+        stage, label_a, items_a, label_b, items_b = _rng.choice(banks)
+        k = min(3, len(items_a))
+        picks = _rng.sample(items_a, k)
+        out.append(_qa(stage, "reasoning",
+                       f"Name {k} {label_a}.",
+                       f"{k} {label_a} are: {', '.join(picks)}."))
+    return out
+
+
+def _multi_step_instruction_tasks(n: int = 70) -> list[dict]:
+    tasks = [
+        ("Write the numbers 4, 9 and 2 in order from smallest to biggest, then add the smallest and the biggest.",
+         lambda a, b, c: (f"In order: {a}, {b}, {c}." if False else f"In order from smallest to biggest: {', '.join(map(str, sorted([a, b, c])))}. "
+                          f"The smallest is {min(a, b, c)} and the biggest is {max(a, b, c)}. "
+                          f"{min(a, b, c)} + {max(a, b, c)} = {min(a, b, c) + max(a, b, c)}.")),
+        ("Take the number 7, double it, and then add 5. What do you get?",
+         lambda: f"7 doubled is 14, and 14 + 5 = 19."),
+        ("Think of the number of days in a week, add the number of fingers on one hand. What is the total?",
+         lambda: f"A week has 7 days and one hand has 5 fingers. 7 + 5 = 12."),
+        ("Count how many letters are in the word 'SCHOOL', then tell the first and last letter.",
+         lambda: f"'SCHOOL' has 6 letters. The first letter is S and the last letter is L."),
+        ("From the word 'RAINY', write the second and fourth letters.",
+         lambda: "The word is R-A-I-N-Y. The second letter is A and the fourth letter is N."),
+        ("Start at 20 and count back in fives. Write the first three numbers.",
+         lambda: "20, 15, 10 — we subtract 5 each time."),
+    ]
+    out = []
+    for _ in range(n):
+        style = _rng.randrange(3)
+        if style == 0:
+            q, fn = _rng.choice(tasks[1:])
+            out.append(_qa(_rng.choice([3, 4]), "instructions", q, fn()))
+        else:
+            a, b, c = _rng.sample(range(1, 50), 3)
+            q, fn = tasks[0]
+            out.append(_qa(_rng.choice([3, 4]), "instructions", q, fn(a, b, c)))
+    return out
+
+
+def _day_logic(n: int = 60) -> list[dict]:
+    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    out = []
+    for _ in range(n):
+        style = _rng.randrange(3)
+        i = _rng.randrange(7); k = _rng.randint(1, 10)
+        if style == 0:
+            out.append(_qa(2, "reasoning",
+                           f"If today is {days[i]}, what day will it be tomorrow and what day was it yesterday?",
+                           f"Tomorrow will be {days[(i + 1) % 7]} and yesterday was {days[(i - 1) % 7]}."))
+        elif style == 1:
+            out.append(_qa(3, "reasoning",
+                           f"If today is {days[i]}, what day will it be after {k} days?",
+                           f"{k} days after {days[i]} is {days[(i + k) % 7]}."))
+        else:
+            out.append(_qa(3, "reasoning",
+                           "Which days of the week are called weekend days?",
+                           "Saturday and Sunday are the weekend days. Most schools and offices are closed then."))
     return out
