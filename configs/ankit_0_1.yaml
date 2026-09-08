@@ -34,14 +34,14 @@ model:
 
 training:
   batch_size: 8
-  grad_accumulation_steps: 1
+  grad_accumulation_steps: 1  # micro-batches per optimizer step (partial end-of-epoch windows are stepped too)
   learning_rate: 0.0006
   weight_decay: 0.1
   warmup_steps: 100
   total_steps: 5000
   checkpoint_interval: 500
   eval_interval: 100
-  eval_steps: 50
+  eval_steps: 50               # max validation batches per eval (0 = full val set)
   max_grad_norm: 1.0
   seed: 1337
   precision: bf16            # fp32 | fp16 | bf16

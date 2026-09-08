@@ -24,8 +24,14 @@ Usage:
 
 from __future__ import annotations
 
-import argparse
 import sys
+from pathlib import Path
+
+# Make `python scripts/<name>.py` work from anywhere: put the repo root
+# on sys.path so project packages (model/, tokenizer/, ...) are importable.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+import argparse
 import time
 from pathlib import Path
 

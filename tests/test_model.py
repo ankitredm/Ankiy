@@ -88,3 +88,39 @@ def test_checkpoint_roundtrip(tmp_path):
         a = model(x)
         b = model2(x)
     assert torch.allclose(a, b, atol=1e-6), "Reloaded model differs from original"
+
+
+def test_future_tokens_cannot_affect_past_positions():
+    """The strongest causality check: change ONLY the last input token and
+    every earlier position's logits must stay bit-identical (the causal mask
+    means position t never sees tokens > t)."""
+    model = _model()
+    model.eval()
+    vocab = model.config.vocab_size
+    torch.manual_seed(3)
+    x = torch.randint(0, vocab, (1, 12))
+    x_modified = x.clone()
+    x_modified[0, -1] = (x_modified[0, -1] + 1) % vocab
+
+    with torch.no_grad():
+        base = model(x)
+        modified = model(x_modified)
+
+    assert torch.allclose(base[:, :-1], modified[:, :-1], atol=1e-6), (
+        "changing a future token changed past logits — causal mask is broken"
+    )
+    assert not torch.allclose(base[:, -1], modified[:, -1]), (
+        "changing the last token should change its own logits"
+    )
+
+
+def test_causal_mask_allows_each_position_to_see_only_up_to_itself():
+    model = _model()
+    mask = model.blocks[-1].attn.causal_mask  # 1 = hidden
+    ctx = mask.shape[0]
+    # Row t: everything strictly after t is hidden, everything up to t visible.
+    for t in (0, 1, ctx // 2, ctx - 1):
+        assert mask[t, : t + 1].sum() == 0      # nothing up to t is hidden
+        assert mask[t, t + 1 :].sum() == ctx - t - 1  # everything after t hidden
+    # Diagonal itself is visible (a token may attend to itself).
+    assert mask.diagonal().sum() == 0

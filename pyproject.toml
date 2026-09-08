@@ -22,9 +22,6 @@ dependencies = [
 dev = ["pytest>=8.0,<9"]
 train = ["datasets>=2.19,<3"]
 
-[project.scripts]
-ankit = "scripts.cli:main"
-
 [tool.setuptools]
 package-dir = {"" = "."}
 

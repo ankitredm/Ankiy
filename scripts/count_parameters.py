@@ -14,6 +14,13 @@ Example output:
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# Make `python scripts/<name>.py` work from anywhere: put the repo root
+# on sys.path so project packages (model/, tokenizer/, ...) are importable.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 import argparse
 from pathlib import Path
 

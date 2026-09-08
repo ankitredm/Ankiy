@@ -54,7 +54,7 @@ class AnkitTokenizer:
         path = Path(path)
         if not path.exists():
             raise FileNotFoundError(
-                f"Tokenized file not found: {path}. Run "
+                f"Tokenizer file not found: {path}. Run "
                 "`python tokenizer/train_tokenizer.py` first."
             )
         tokenizer = Tokenizer.from_file(str(path))

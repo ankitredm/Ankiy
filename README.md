@@ -143,9 +143,9 @@ model/                    # our own Transformer implementation
 tokenizer/                # train_tokenizer.py + tokenizer.py (our own BPE)
 training/                 # train.py, dataset.py, checkpoint.py (from-scratch loop)
 generate.py               # generate text from an ANKIT checkpoint
-evaluation/               # evaluate.py + benchmarks
+evaluation/               # (placeholder for future evaluation scripts)
 scripts/                  # count_parameters.py, prepare_dataset.py, verify_environment.py
-tests/                    # pytest suite (config + model)
+tests/                    # pytest suite (config, model, tokenizer, training)
 checkpoints/              # model checkpoints (git-ignored)
 logs/                     # training logs (git-ignored)
 ```
@@ -175,7 +175,25 @@ python generate.py --prompt "The capital of" --ckpt checkpoints/step_20
 `training/train.py` builds a model from random weights, runs causal next-token
 prediction with AdamW + warmup/cosine LR schedule, mixed precision, gradient
 clipping/accumulation, validation, checkpointing (safetensors), and resume. It
-**never** loads a pretrained model.
+**never** loads a pretrained model. Reliability guarantees baked into the loop:
+
+- **Real gradient accumulation.** If an epoch ends mid-window (the data length
+  is not a multiple of `grad_accumulation_steps`), the partial window is
+  stepped instead of being silently dropped, so no gradients are ever wasted.
+- **Mixed precision follows the resolved device.** `bf16`/`fp16` autocast is
+  only enabled on CUDA; the `GradScaler` is only created for `fp16`+CUDA. A
+  CPU run always trains in full fp32 (with a warning if you asked for more).
+- **`eval_steps` works.** Each validation pass uses at most `eval_steps`
+  validation batches (`0` = evaluate the full validation set).
+- **Data is validated before training.** Missing / empty / corrupt / too-small
+  `train.bin` / `val.bin` files fail immediately with an actionable message.
+- **Resume is checked before loading.** If `output_dir` already holds an
+  ANKIT checkpoint, training resumes from it automatically — but only after
+  verifying the checkpoint's architecture (layers, heads, context length,
+  vocab), tokenizer vocabulary, and format all still match the config.
+- **"From scratch" is verified, not just claimed.** At startup the loop
+  rebuilds a reference model from the same seed and proves, weight by weight,
+  that the model about to be trained is exactly a fresh random initialisation.
 
 **Phase 4 — our own tokenizer** (`tokenizer/`, `configs/tokenizer.yaml`). A
 freshly trained **byte-level BPE** tokenizer on our own corpus — not a copy of

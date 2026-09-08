@@ -27,20 +27,23 @@ model:
 
 training:
   batch_size: 2
-  grad_accumulation_steps: 1
+  grad_accumulation_steps: 1  # optimizer steps per gradient window
   learning_rate: 0.001
   weight_decay: 0.0
   warmup_steps: 5
   total_steps: 20
   checkpoint_interval: 5
   eval_interval: 5
-  eval_steps: 5
+  eval_steps: 5               # max validation batches per eval (0 = full val set)
   max_grad_norm: 1.0
   seed: 42
   precision: fp32            # smoke tests run fine in fp32 on CPU
-  device: cuda               # set to "cpu" if you are testing on a CPU box
+  device: auto               # uses the GPU if present, else CPU
   output_dir: checkpoints
   tokenizer_path: tokenizer/ankit_tokenizer.json
-  train_data: data/tokenized/smoke_train.bin
-  val_data: data/tokenized/smoke_val.bin
-  test_data: data/tokenized/smoke_test.bin
+  # The smoke run trains on the SAME tokenized files as the real model
+  # (produced by `python scripts/tokenize_dataset.py`) — the "smoke" part is
+  # the tiny model above and the handful of steps, not the data.
+  train_data: data/tokenized/train.bin
+  val_data: data/tokenized/val.bin
+  test_data: data/tokenized/test.bin

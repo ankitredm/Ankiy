@@ -29,16 +29,47 @@ class TokenDataset(Dataset):
 
     def __init__(self, path: str | Path, context_length: int) -> None:
         self.path = str(path)
-        self.context_length = context_length
-        if not Path(path).exists():
+        self.context_length = int(context_length)
+        if self.context_length < 1:
+            raise ValueError(
+                f"context_length must be >= 1 (got {self.context_length})."
+            )
+        path = Path(path)
+        if not path.exists():
             raise FileNotFoundError(
                 f"Token data not found: {path}. Run "
                 "`python scripts/tokenize_dataset.py` first."
             )
+        if not path.is_file():
+            raise ValueError(
+                f"Token data path is not a file: {path}. "
+                "Point train_data/val_data at a tokenized .bin file."
+            )
+        file_size = path.stat().st_size
+        if file_size == 0:
+            raise ValueError(
+                f"Token data file is EMPTY: {path}. Re-run "
+                "`python scripts/tokenize_dataset.py` — training on it is "
+                "impossible."
+            )
+        if file_size % np.dtype(np.uint16).itemsize != 0:
+            raise ValueError(
+                f"Token data file is corrupt (size {file_size} is not a "
+                f"multiple of 2 bytes for uint16 ids): {path}. Re-run "
+                "`python scripts/tokenize_dataset.py`."
+            )
         # memmap keeps the file on disk while we read windows from it.
         self.data = np.memmap(path, dtype=np.uint16, mode="r")
         # An example needs context_length+1 tokens (input + one target).
-        self.num_examples = max(0, len(self.data) - context_length)
+        self.num_examples = max(0, len(self.data) - self.context_length)
+        if self.num_examples < 1:
+            raise ValueError(
+                f"Token data is too small: {path} holds {len(self.data):,} "
+                f"token(s), but one training example needs at least "
+                f"context_length + 1 = {self.context_length + 1} tokens. "
+                "Tokenize more text or reduce model.context_length in the "
+                "config."
+            )
 
     def __len__(self) -> int:
         return self.num_examples

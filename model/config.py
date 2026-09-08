@@ -152,8 +152,31 @@ class TrainingConfig:
     def validate(self) -> None:
         if self.batch_size < 1:
             raise ValueError("TrainingConfig.batch_size must be positive.")
+        if self.grad_accumulation_steps < 1:
+            raise ValueError(
+                "TrainingConfig.grad_accumulation_steps must be at least 1 "
+                f"(got {self.grad_accumulation_steps})."
+            )
         if self.learning_rate <= 0:
             raise ValueError("TrainingConfig.learning_rate must be positive.")
+        if self.total_steps < 1:
+            raise ValueError("TrainingConfig.total_steps must be at least 1.")
+        if self.warmup_steps < 0:
+            raise ValueError("TrainingConfig.warmup_steps must be >= 0.")
+        if self.checkpoint_interval < 0 or self.eval_interval < 0:
+            raise ValueError(
+                "TrainingConfig.checkpoint_interval / eval_interval must be >= 0 "
+                "(0 disables the interval)."
+            )
+        if self.eval_steps < 0:
+            raise ValueError(
+                "TrainingConfig.eval_steps must be >= 0 (0 = use the full "
+                "validation set at every eval)."
+            )
+        if self.max_grad_norm <= 0:
+            raise ValueError("TrainingConfig.max_grad_norm must be positive.")
+        if self.weight_decay < 0:
+            raise ValueError("TrainingConfig.weight_decay must be >= 0.")
         if self.precision not in ("fp32", "fp16", "bf16"):
             raise ValueError(f"Unsupported precision: {self.precision!r}")
         if self.device not in ("cuda", "cpu", "auto"):
