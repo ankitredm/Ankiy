@@ -315,6 +315,10 @@ Two deterministic measurements (both runnable on CPU):
 ```bash
 python -m evaluation.curriculum_eval --ckpt checkpoints/ankit_0_1_50m/step_24000
 python -m evaluation.curriculum_eval --baseline          # untrained model, for comparison
+
+# Formal Class 4 EXAMINATION (122 held-out questions, strict grading,
+# anti-memorization check, read-only on the checkpoint):
+python -m evaluation.class4_exam --ckpt checkpoints/demo_50m/step_120
 ```
 
 - **loss mode** — per-category loss on the held-out test split (WHERE is the
