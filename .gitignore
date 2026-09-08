@@ -7,6 +7,7 @@ data/raw/gutenberg/
 data/processed/*
 data/tokenized/*
 data/stats/
+data/curriculum/
 !data/processed/.gitkeep
 !data/tokenized/.gitkeep
 

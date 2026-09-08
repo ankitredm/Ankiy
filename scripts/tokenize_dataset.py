@@ -121,6 +121,18 @@ def main() -> None:
         "test": tcfg.test_data,
     }
 
+    # Guard: this script tokenizes the generic Phase-3 sample/book splits into
+    # data/tokenized/. The Class 1-4 curriculum has its own flow — never let
+    # this script overwrite curriculum stage files.
+    for split_name, data_path in sources.items():
+        if "curriculum" in Path(data_path).parts:
+            raise SystemExit(
+                f"Refusing to write {data_path}: it is a CURRICULUM data file. "
+                "Build and tokenize the curriculum with:\n"
+                "  python scripts/build_curriculum.py\n"
+                "  python scripts/tokenize_curriculum.py"
+            )
+
     # The .bin files live next to train_data. Derive them from the configured
     # train_data path so they're always consistent.
     for split_name, data_path in sources.items():

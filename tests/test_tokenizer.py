@@ -126,3 +126,46 @@ def test_config_rejects_non_bpe():
              "input": {"paths": ["x.txt"]}}
         )
         train_tokenizer.build_tokenizer(cfg)
+
+
+def test_pad_tokenizer_to_size(tmp_path):
+    """pad_tokenizer_to_size grows a small BPE vocab to an exact target."""
+    from tokenizers import Tokenizer
+    from tokenizers.models import BPE
+    from tokenizers.pre_tokenizers import ByteLevel as BLPre
+    from tokenizers.processors import ByteLevel as BLPost
+    from tokenizers.decoders import ByteLevel as BLDec
+    from tokenizers.trainers import BpeTrainer
+    from tokenizer.train_tokenizer import pad_tokenizer_to_size
+
+    corpus = tmp_path / "corpus.txt"
+    corpus.write_text(
+        ("the quick brown fox jumps over the lazy dog "
+         "a clever fox runs fast and the dog runs too ") * 30,
+        encoding="utf-8",
+    )
+    tok = Tokenizer(BPE())
+    tok.pre_tokenizer = BLPre(add_prefix_space=True)
+    tok.post_processor = BLPost(trim_offsets=True)
+    tok.decoder = BLDec()
+    tok.train([str(corpus)], BpeTrainer(vocab_size=300, special_tokens=["<unk>", "<s>", "</s>", "<pad>"]))
+    small = tok.get_vocab_size()
+    target = small + 40
+    assert small < target
+
+    stats = pad_tokenizer_to_size(tok, target)
+    assert stats["padded"] is True
+    assert tok.get_vocab_size() == target == stats["after"]
+
+    # Encoding is unaffected by reserved tokens: round-trip still works.
+    text = "the quick brown fox jumps over the lazy dog"
+    ids = tok.encode(text).ids
+    assert tok.decode(ids).strip() == text
+    # Reserved tokens are special: never produced from text, skipped in decode.
+    reserved_id = target - 1
+    assert reserved_id not in ids
+    assert "<|reserved_" not in tok.decode([reserved_id, 5], skip_special_tokens=True)
+
+    # Padding to a smaller-or-equal size is a no-op, never a truncation.
+    stats2 = pad_tokenizer_to_size(tok, 4)
+    assert stats2["padded"] is False and tok.get_vocab_size() == target

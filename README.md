@@ -127,8 +127,10 @@ tokenizer.** It only reports what your machine has.
 
 ```text
 configs/                  # YAML config (model size, training hyperparams)
-  ankit_0_1.yaml          # the target ~13M model
+  ankit_0_1.yaml          # the ~50M model (48,387,072 parameters)
+  curriculum/             # stage1..6 configs + curriculum smoke test
   smoke.yaml              # tiny model for quick pipeline checks
+curriculum/               # Class 1-4 curriculum builders (English/Hinglish/Maths/EVS/Social/Reasoning)
 dataprep/                 # dataset pipeline: clean, filter, dedup, split, stats
 data/
   raw/                    # raw public-domain text (sample/ is committed; big dl's are not)
@@ -141,9 +143,9 @@ model/                    # our own Transformer implementation
   transformer.py          # one decoder block + feed-forward
   ankit_model.py          # the full decoder-only AnkitModel
 tokenizer/                # train_tokenizer.py + tokenizer.py (our own BPE)
-training/                 # train.py, dataset.py, checkpoint.py (from-scratch loop)
+training/                 # train.py, dataset.py, checkpoint.py, provenance.py (from-scratch loop)
 generate.py               # generate text from an ANKIT checkpoint
-evaluation/               # (placeholder for future evaluation scripts)
+evaluation/               # curriculum_eval.py + hand-written quiz tasks (10 categories)
 scripts/                  # count_parameters.py, prepare_dataset.py, verify_environment.py
 tests/                    # pytest suite (config, model, tokenizer, training)
 checkpoints/              # model checkpoints (git-ignored)
@@ -245,11 +247,12 @@ and the model changes shape — **no source code edits needed**.
 Count the parameters of a real build (no hard-coded guess):
 
 ```bash
-python scripts/count_parameters.py                  # prints the ~13.18M count
+python scripts/count_parameters.py                  # prints the ~48.39M count
 python scripts/count_parameters.py --config configs/smoke.yaml
 ```
 
-Run the test suite (forward pass, causal mask, loss, checkpoint, generation):
+Run the test suite (config, model, causal masking, tokenizer, curriculum,
+gradient accumulation, checkpoint resume, evaluation harness, CPU training):
 
 ```bash
 python -m pytest tests/ -v
@@ -257,7 +260,75 @@ python -m pytest tests/ -v
 
 ---
 
-## Anti-shortcut reminders
+## The ~50M model and the Class 1–4 curriculum
+
+ANKIT 0.1 is now the **~50M build** (same decoder-only design, scaled up):
+
+| | d_model | n_layers | n_heads | ffn_dim | context | vocab | parameters |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| before | 256 | 6 | 8 | 1024 | 256 | 16,384 | 13,179,392 |
+| **now** | **512** | **10** | **8** | **2048** | **256** | **16,384** | **48,387,072** |
+
+`head_dim = 512 / 8 = 64`. The tokenizer is still OUR OWN byte-level BPE; a
+small corpus cannot always learn all 16,384 merges, so after training on our
+corpus the vocabulary is **padded with reserved special tokens** to exactly
+16,384 — this keeps the parameter count deterministic and config/tokenizer
+always aligned (padding is our own; no pretrained tokenizer is involved).
+
+### Class 1–4 curriculum (our own original content)
+
+`curriculum/` generates the whole educational corpus from code — English
+(vocabulary, spelling, grammar, tenses, paragraphs, stories, comprehension),
+natural Roman-script **Hinglish** conversation, progressive **Maths** with
+worked examples, **Science/EVS**, **Social studies**, and **Reasoning**:
+
+```bash
+python scripts/build_curriculum.py       # generate + dedupe + split -> data/curriculum/
+python tokenizer/train_tokenizer.py      # retrain OUR tokenizer on sample + curriculum corpus
+python scripts/tokenize_curriculum.py    # stage-wise .bin files -> data/tokenized/curriculum/
+```
+
+Training runs in six stages, each resuming the same `output_dir` (warm-restart
+cosine at every boundary). Every stage revises earlier classes; stage 5 is a
+full mixed revision and stage 6 is an exercise/QA/reasoning-heavy
+reinforcement round:
+
+```bash
+python training/train.py --config configs/curriculum/stage1.yaml   # steps 0    -> 3000
+python training/train.py --config configs/curriculum/stage2.yaml   # resumes -> 7000
+python training/train.py --config configs/curriculum/stage3.yaml   # resumes -> 12000
+python training/train.py --config configs/curriculum/stage4.yaml   # resumes -> 18000
+python training/train.py --config configs/curriculum/stage5.yaml   # resumes -> 22000
+python training/train.py --config configs/curriculum/stage6.yaml   # resumes -> 24000
+```
+
+Quick sanity check of the whole chain (tiny model, real curriculum data):
+
+```bash
+python training/train.py --config configs/curriculum/smoke.yaml
+```
+
+### Evaluation suite
+
+Two deterministic measurements (both runnable on CPU):
+
+```bash
+python -m evaluation.curriculum_eval --ckpt checkpoints/ankit_0_1_50m/step_24000
+python -m evaluation.curriculum_eval --baseline          # untrained model, for comparison
+```
+
+- **loss mode** — per-category loss on the held-out test split (WHERE is the
+  model weak: math? hinglish? science?).
+- **generation mode** — 100 hand-written quiz tasks across 10 categories
+  (vocabulary, grammar, comprehension, hinglish, math, word problems,
+  science, social, reasoning, instructions), answered greedily and scored.
+  The tasks are fully separate from the training corpus.
+
+Use stage 6 + the eval suite as the reinforcement loop: evaluate, find the
+weak categories, continue stage 6 training, evaluate again.
+
+---
+
 
 - If something is too expensive, **shrink** — never swap in a pretrained model.
 - Never claim "ChatGPT-level" without strong evidence.

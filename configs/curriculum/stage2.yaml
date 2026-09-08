@@ -1,0 +1,44 @@
+# ANKIT 0.1 — curriculum stage2: Stage 2 — Class 2 foundation (+ Class 1 revision)
+#
+# total_steps is a CUMULATIVE target: running this config resumes the shared
+# output_dir and trains until the target step, then cosine-decays LR to the
+# new horizon (warm restart per stage — SGDR style). Stages chain because
+# every config points at the SAME output_dir.
+#
+# Run order:  python training/train.py --config configs/curriculum/stage2.yaml
+
+name: ankit-0-1
+
+model:
+  vocab_size: 16384
+  d_model: 512
+  n_layers: 10
+  n_heads: 8
+  context_length: 256
+  ffn_dim: 2048
+  activation: gelu
+  dropout: 0.1
+  norm_eps: 1e-5
+  init_std: 0.02
+  tie_embedding: false
+  use_bias: false
+
+training:
+  batch_size: 16
+  grad_accumulation_steps: 2   # effective batch 32
+  learning_rate: 0.0006
+  weight_decay: 0.1
+  warmup_steps: 500
+  total_steps: 7000
+  checkpoint_interval: 1000
+  eval_interval: 500
+  eval_steps: 50
+  max_grad_norm: 1.0
+  seed: 1337
+  precision: bf16
+  device: auto
+  output_dir: checkpoints/ankit_0_1_50m
+  tokenizer_path: tokenizer/ankit_tokenizer.json
+  train_data: data/tokenized/curriculum/stage2_train.bin
+  val_data: data/tokenized/curriculum/val.bin
+  test_data: data/tokenized/curriculum/test.bin

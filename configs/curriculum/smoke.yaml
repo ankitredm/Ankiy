@@ -1,0 +1,50 @@
+# ANKIT 0.1 — curriculum smoke test config
+#
+# A TINY model trained for a handful of steps on the REAL curriculum data
+# (stage 5 mixed revision + the held-out validation split). Its only job is
+# to prove the curriculum data/tokenizer/training chain is wired correctly
+# in under a minute on CPU — never use it for real training.
+#
+# Prerequisites:
+#   python scripts/build_curriculum.py
+#   python tokenizer/train_tokenizer.py
+#   python scripts/tokenize_curriculum.py
+#
+# Run:
+#   python training/train.py --config configs/curriculum/smoke.yaml
+
+name: ankit-0-1-curriculum-smoke
+
+model:
+  vocab_size: 16384
+  d_model: 64
+  n_layers: 2
+  n_heads: 4
+  context_length: 64
+  ffn_dim: 256
+  activation: gelu
+  dropout: 0.1
+  norm_eps: 1e-5
+  init_std: 0.02
+  tie_embedding: false
+  use_bias: false
+
+training:
+  batch_size: 4
+  grad_accumulation_steps: 4   # 19 micro-batches/epoch -> partial window exercise
+  learning_rate: 0.001
+  weight_decay: 0.0
+  warmup_steps: 2
+  total_steps: 8
+  checkpoint_interval: 0       # only the final checkpoint
+  eval_interval: 4
+  eval_steps: 2                # cap each eval to 2 validation batches
+  max_grad_norm: 1.0
+  seed: 42
+  precision: fp32
+  device: cpu
+  output_dir: checkpoints/curriculum_smoke
+  tokenizer_path: tokenizer/ankit_tokenizer.json
+  train_data: data/tokenized/curriculum/stage5_train.bin
+  val_data: data/tokenized/curriculum/val.bin
+  test_data: data/tokenized/curriculum/test.bin

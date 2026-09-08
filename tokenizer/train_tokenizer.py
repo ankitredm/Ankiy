@@ -57,12 +57,14 @@ class TokenizerConfig:
     tokenizer_file: str
     vocab_file: str
     report_file: str
+    pad_vocab_to: Optional[int] = None
 
     @classmethod
     def from_dict(cls, data: dict) -> "TokenizerConfig":
         inp = data.get("input", {})
         bpe = data.get("bpe", {})
         special = data.get("special_tokens", ["<unk>", "<s>", "</s>", "<pad>"])
+        pad_to = data.get("pad_vocab_to")
         return cls(
             name=str(data.get("name", "ankit-tokenizer")),
             version=str(data.get("version", "0.1")),
@@ -79,6 +81,7 @@ class TokenizerConfig:
             tokenizer_file=str(data.get("tokenizer_file", "tokenizer/ankit_tokenizer.json")),
             vocab_file=str(data.get("vocab_file", "tokenizer/vocab.json")),
             report_file=str(data.get("report_file", "tokenizer/tokenizer_report.json")),
+            pad_vocab_to=(int(pad_to) if pad_to else None),
         )
 
 
@@ -201,6 +204,38 @@ def iter_documents_clean(
         yield "".join(ch for ch in doc if ord(ch) >= 32 or ch in "\n\t")
 
 
+def pad_tokenizer_to_size(tokenizer: Tokenizer, target: int) -> dict:
+    """Pad the vocabulary with reserved tokens until it holds exactly ``target``.
+
+    A small corpus may stop BPE training well below the target vocabulary size
+    (e.g. ~1,500 merges on the sample corpus). The model, however, needs a
+    fixed ``vocab_size`` so the parameter count is deterministic and the
+    config/tokenizer always agree. We add reserved *special* tokens
+    (``<|reserved_0|>`` ... ) which:
+
+      - are never produced by ``encode`` (they are not mergeable from text),
+      - are skipped by ``decode(..., skip_special_tokens=True)``, so even if
+        the model samples one, readable output is unaffected,
+      - give the embedding/LM-head their full configured width.
+
+    This is plain vocabulary padding — no pretrained tokenizer is involved.
+    Returns a small stats dict. Never truncates if the vocab already exceeds
+    the target; that is reported instead.
+    """
+    before = tokenizer.get_vocab_size()
+    if target <= before:
+        return {"padded": False, "before": before, "after": before, "added": 0}
+
+    reserved = [f"<|reserved_{i}|>" for i in range(target - before)]
+    added = tokenizer.add_special_tokens(reserved)
+    after = tokenizer.get_vocab_size()
+    if after != target:  # pragma: no cover - defensive
+        raise RuntimeError(
+            f"Tokenizer padding failed: vocab {before} -> {after}, expected {target}."
+        )
+    return {"padded": True, "before": before, "after": after, "added": added}
+
+
 def run_training(cfg: TokenizerConfig) -> dict:
     """Train the tokenizer, save files, and return a report dict."""
     t0 = time.time()
@@ -209,6 +244,19 @@ def run_training(cfg: TokenizerConfig) -> dict:
 
     tokenizer = build_tokenizer(cfg)
     vocab = tokenizer.get_vocab()
+
+    # Optionally pad the vocab to a fixed size so the model's vocab_size (and
+    # therefore its parameter count) is deterministic regardless of how many
+    # BPE merges the corpus supported.
+    pad_stats = {"padded": False, "before": len(vocab), "after": len(vocab), "added": 0}
+    if cfg.pad_vocab_to:
+        pad_stats = pad_tokenizer_to_size(tokenizer, cfg.pad_vocab_to)
+        if pad_stats["padded"]:
+            print(
+                f"Padded vocabulary: {pad_stats['before']:,} -> "
+                f"{pad_stats['after']:,} (+{pad_stats['added']:,} reserved tokens)"
+            )
+        vocab = tokenizer.get_vocab()
 
     # Save the HuggingFace tokenizer JSON (the main artifact).
     out_file = Path(cfg.tokenizer_file)
@@ -233,6 +281,8 @@ def run_training(cfg: TokenizerConfig) -> dict:
         "algorithm": cfg.algorithm,
         "vocab_size": len(vocab),
         "target_vocab_size": cfg.vocab_size,
+        "learned_vocab_size": pad_stats["before"],
+        "padded_to": pad_stats["after"] if pad_stats["padded"] else None,
         "min_frequency": cfg.min_frequency,
         "special_tokens": special_ids,
         "files_read": len(resolve_input_paths(cfg.input_paths)),

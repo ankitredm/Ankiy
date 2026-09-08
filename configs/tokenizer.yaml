@@ -28,12 +28,24 @@ input:
   type: local
   # Paths, in order, of plain .txt or .jsonl files to read for tokenizer
   # training. Glob patterns are supported (a * matches many files).
+  # The Class 1-4 curriculum corpus (built by scripts/build_curriculum.py)
+  # is included so the tokenizer knows school-level English + Hinglish words.
   paths:
+    - data/curriculum/tokenizer_corpus/*.jsonl
     - data/processed/splits/train.jsonl
     - data/raw/sample/**/*.txt
   # A .jsonl "text" field is read; .txt is read whole.
-  max_documents: 50000        # cap for a very large corpus (None = unlimited)
+  max_documents: 100000       # cap for a very large corpus (None = unlimited)
   sample_text: "ANJIT"        # placeholder, set an empty string if unused
+
+# -- Vocabulary padding ----------------------------------------------------
+# A small corpus cannot always learn the full 16,384 BPE merges. When set,
+# the vocabulary is padded with reserved special tokens (<|reserved_N|>) to
+# exactly this size after training, so the model's vocab_size (and parameter
+# count) is deterministic. Reserved tokens never appear in encoded text and
+# are skipped by decode(skip_special_tokens=True). This is OUR OWN padding —
+# no pretrained tokenizer is involved.
+pad_vocab_to: 16384
 
 # -- Special tokens -------------------------------------------------------
 # BOS marks the start of a sequence, EOS the end, PAD pads variable-length
